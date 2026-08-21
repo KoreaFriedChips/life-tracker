@@ -1,0 +1,53 @@
+/* Life Tracker design tokens — mirror of src/app/globals.css. Inlined into each preview. */
+:root {
+  --background: #fafafa;
+  --foreground: #18181b;
+  --surface: #ffffff;
+  --surface-subtle: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --muted: #71717a;
+  --faint: #a1a1aa;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --accent-soft-fg: #4338ca;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --danger-soft-fg: #b91c1c;
+  --success-soft: #f0fdf4;
+  --success-soft-fg: #15803d;
+  --warning-soft: #fffbeb;
+  --warning-soft-fg: #b45309;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --foreground: #fafafa;
+    --surface: #18181b;
+    --surface-subtle: #27272a;
+    --border: #27272a;
+    --border-strong: #3f3f46;
+    --muted: #a1a1aa;
+    --faint: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-soft: #1e1b4b;
+    --accent-soft-fg: #a5b4fc;
+    --danger: #f87171;
+    --danger-soft: #450a0a;
+    --danger-soft-fg: #fca5a5;
+    --success-soft: #052e16;
+    --success-soft-fg: #86efac;
+    --warning-soft: #451a03;
+    --warning-soft-fg: #fcd34d;
+  }
+}
+body {
+  margin: 0;
+  padding: 1.5rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+}

@@ -1,26 +1,138 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #18181b;
+  --surface: #ffffff;
+  --surface-subtle: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --muted: #71717a;
+  --faint: #a1a1aa;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --accent-soft-fg: #4338ca;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --danger-soft-fg: #b91c1c;
+  --success-soft: #f0fdf4;
+  --success-soft-fg: #15803d;
+  --warning-soft: #fffbeb;
+  --warning-soft-fg: #b45309;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --foreground: #fafafa;
+    --surface: #18181b;
+    --surface-subtle: #27272a;
+    --border: #27272a;
+    --border-strong: #3f3f46;
+    --muted: #a1a1aa;
+    --faint: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-soft: #1e1b4b;
+    --accent-soft-fg: #a5b4fc;
+    --danger: #f87171;
+    --danger-soft: #450a0a;
+    --danger-soft-fg: #fca5a5;
+    --success-soft: #052e16;
+    --success-soft-fg: #86efac;
+    --warning-soft: #451a03;
+    --warning-soft-fg: #fcd34d;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-fg: var(--accent-soft-fg);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-soft-fg: var(--danger-soft-fg);
+  --color-success-soft: var(--success-soft);
+  --color-success-soft-fg: var(--success-soft-fg);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-soft-fg: var(--warning-soft-fg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+input[type="checkbox"],
+input[type="date"] {
+  accent-color: var(--accent);
+}
+
+/* Minimal typography for user-authored markdown (notes fields). */
+.markdown :is(h1, h2, h3, h4) {
+  font-weight: 600;
+  margin-block: 1em 0.4em;
+}
+.markdown p {
+  margin-block: 0.5em;
+}
+.markdown ul {
+  list-style: disc;
+  padding-left: 1.25em;
+  margin-block: 0.5em;
+}
+.markdown ol {
+  list-style: decimal;
+  padding-left: 1.25em;
+  margin-block: 0.5em;
+}
+.markdown a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.markdown code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--surface-subtle);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+}
+.markdown pre {
+  background: var(--surface-subtle);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  overflow-x: auto;
+  margin-block: 0.75em;
+}
+.markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+.markdown blockquote {
+  border-left: 2px solid var(--border-strong);
+  padding-left: 0.75rem;
+  color: var(--muted);
+  margin-block: 0.5em;
+}
+.markdown table {
+  border-collapse: collapse;
+  margin-block: 0.75em;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid var(--border);
+  padding: 0.3em 0.6em;
 }

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Colors" name="Color tokens" subtitle="Semantic palette, light + dark via prefers-color-scheme" -->
+<title>Color tokens</title>
+<style>
+  :root { --background:#fafafa; --foreground:#18181b; --surface:#ffffff; --surface-subtle:#f4f4f5; --border:#e4e4e7; --border-strong:#d4d4d8; --muted:#71717a; --faint:#a1a1aa; --accent:#4f46e5; --accent-hover:#4338ca; --accent-soft:#eef2ff; --accent-soft-fg:#4338ca; --danger:#dc2626; --danger-soft:#fef2f2; --danger-soft-fg:#b91c1c; --success-soft:#f0fdf4; --success-soft-fg:#15803d; --warning-soft:#fffbeb; --warning-soft-fg:#b45309; }
+  @media (prefers-color-scheme: dark) {
+    :root { --background:#09090b; --foreground:#fafafa; --surface:#18181b; --surface-subtle:#27272a; --border:#27272a; --border-strong:#3f3f46; --muted:#a1a1aa; --faint:#71717a; --accent:#6366f1; --accent-hover:#818cf8; --accent-soft:#1e1b4b; --accent-soft-fg:#a5b4fc; --danger:#f87171; --danger-soft:#450a0a; --danger-soft-fg:#fca5a5; --success-soft:#052e16; --success-soft-fg:#86efac; --warning-soft:#451a03; --warning-soft-fg:#fcd34d; }
+  }
+  body { margin:0; padding:1.5rem; background:var(--background); color:var(--foreground); font-family:Geist,ui-sans-serif,system-ui,sans-serif; font-size:14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:0.75rem; }
+  .swatch { border:1px solid var(--border); border-radius:0.75rem; overflow:hidden; background:var(--surface); }
+  .swatch .chip { height:48px; }
+  .swatch .label { padding:0.4rem 0.6rem; font-size:11px; color:var(--muted); }
+</style>
+<div class="grid">
+  <div class="swatch"><div class="chip" style="background:var(--background)"></div><div class="label">background</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--surface)"></div><div class="label">surface</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--surface-subtle)"></div><div class="label">surface-subtle</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--border)"></div><div class="label">border</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--foreground)"></div><div class="label">foreground</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--muted)"></div><div class="label">muted</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--faint)"></div><div class="label">faint</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--accent)"></div><div class="label">accent</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--accent-soft)"></div><div class="label">accent-soft</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--danger)"></div><div class="label">danger</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--danger-soft)"></div><div class="label">danger-soft</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--success-soft)"></div><div class="label">success-soft</div></div>
+  <div class="swatch"><div class="chip" style="background:var(--warning-soft)"></div><div class="label">warning-soft</div></div>
+</div>

@@ -1,0 +1,24 @@
+<!-- @dsCard group="Components" name="Badges & tags" subtitle="5 tones + tag pills" -->
+<title>Badges &amp; tags</title>
+<style>
+  :root { --background:#fafafa; --foreground:#18181b; --surface-subtle:#f4f4f5; --muted:#71717a; --accent-soft:#eef2ff; --accent-soft-fg:#4338ca; --danger-soft:#fef2f2; --danger-soft-fg:#b91c1c; --success-soft:#f0fdf4; --success-soft-fg:#15803d; --warning-soft:#fffbeb; --warning-soft-fg:#b45309; }
+  @media (prefers-color-scheme: dark) {
+    :root { --background:#09090b; --foreground:#fafafa; --surface-subtle:#27272a; --muted:#a1a1aa; --accent-soft:#1e1b4b; --accent-soft-fg:#a5b4fc; --danger-soft:#450a0a; --danger-soft-fg:#fca5a5; --success-soft:#052e16; --success-soft-fg:#86efac; --warning-soft:#451a03; --warning-soft-fg:#fcd34d; }
+  }
+  body { margin:0; padding:1.5rem; background:var(--background); color:var(--foreground); font-family:Geist,ui-sans-serif,system-ui,sans-serif; font-size:14px; }
+  .badge { display:inline-flex; align-items:center; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:500; white-space:nowrap; }
+  .row { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; align-items:center; }
+  .label { width:100%; font-size:11px; color:var(--muted); margin-bottom:-0.5rem; }
+</style>
+<div class="row"><span class="label">Status badges</span>
+  <span class="badge" style="background:var(--surface-subtle);color:var(--muted)">neutral · book</span>
+  <span class="badge" style="background:var(--accent-soft);color:var(--accent-soft-fg)">accent · reading</span>
+  <span class="badge" style="background:var(--success-soft);color:var(--success-soft-fg)">success · last talked: 9 days ago</span>
+  <span class="badge" style="background:var(--warning-soft);color:var(--warning-soft-fg)">warning · 45 days ago</span>
+  <span class="badge" style="background:var(--danger-soft);color:var(--danger-soft-fg)">danger · overdue</span>
+</div>
+<div class="row"><span class="label">Tag pills (lowercase, quieter)</span>
+  <span class="badge" style="background:var(--surface-subtle);color:var(--muted);font-weight:400">psychology</span>
+  <span class="badge" style="background:var(--surface-subtle);color:var(--muted);font-weight:400">deep-learning</span>
+  <span class="badge" style="background:var(--surface-subtle);color:var(--muted);font-weight:400">friend</span>
+</div>

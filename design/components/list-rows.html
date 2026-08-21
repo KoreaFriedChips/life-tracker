@@ -1,0 +1,42 @@
+<!-- @dsCard group="Components" name="List rows" subtitle="To-do, person, and knowledge-entry rows" -->
+<title>List rows</title>
+<style>
+  :root { --background:#fafafa; --foreground:#18181b; --surface:#ffffff; --surface-subtle:#f4f4f5; --border:#e4e4e7; --muted:#71717a; --accent:#4f46e5; --accent-soft:#eef2ff; --accent-soft-fg:#4338ca; --danger-soft:#fef2f2; --danger-soft-fg:#b91c1c; --success-soft:#f0fdf4; --success-soft-fg:#15803d; }
+  @media (prefers-color-scheme: dark) {
+    :root { --background:#09090b; --foreground:#fafafa; --surface:#18181b; --surface-subtle:#27272a; --border:#27272a; --muted:#a1a1aa; --accent:#6366f1; --accent-soft:#1e1b4b; --accent-soft-fg:#a5b4fc; --danger-soft:#450a0a; --danger-soft-fg:#fca5a5; --success-soft:#052e16; --success-soft-fg:#86efac; }
+  }
+  body { margin:0; padding:1.5rem; background:var(--background); color:var(--foreground); font-family:Geist,ui-sans-serif,system-ui,sans-serif; font-size:14px; }
+  .card { border-radius:0.75rem; border:1px solid var(--border); background:var(--surface); box-shadow:0 1px 2px rgb(0 0 0 / 0.05); max-width:560px; }
+  .rows { padding:0 16px; }
+  .row { display:flex; align-items:flex-start; gap:12px; padding:10px 0; }
+  .row + .row { border-top:1px solid var(--border); }
+  .badge { display:inline-flex; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:500; white-space:nowrap; }
+  .tag { background:var(--surface-subtle); color:var(--muted); font-weight:400; }
+  .title { font-weight:500; }
+  .title:hover { color:var(--accent); }
+  .notes { font-size:12px; color:var(--muted); margin-top:2px; }
+  .spread { display:flex; justify-content:space-between; align-items:center; flex:1; gap:8px; flex-wrap:wrap; }
+  input[type="checkbox"] { width:16px; height:16px; margin-top:2px; accent-color:var(--accent); }
+</style>
+<div class="card">
+  <div class="rows">
+    <div class="row">
+      <input type="checkbox">
+      <div><span>Book flights for the trip</span> <span class="badge" style="background:var(--danger-soft);color:var(--danger-soft-fg)">overdue · 2026-08-01</span>
+        <div class="notes">Check points balance first</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="spread">
+        <span><span class="title">Alice Contacted</span> <span class="badge tag">friend</span></span>
+        <span class="badge" style="background:var(--success-soft);color:var(--success-soft-fg)">last talked: 9 days ago</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="title">Thinking, Fast and Slow</span>
+      <span class="badge tag">book</span>
+      <span class="badge" style="background:var(--accent-soft);color:var(--accent-soft-fg)">reading</span>
+      <span class="badge tag">psychology</span>
+    </div>
+  </div>
+</div>

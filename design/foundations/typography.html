@@ -1,0 +1,18 @@
+<!-- @dsCard group="Type" name="Typography" subtitle="Geist sans, Geist Mono for code" -->
+<title>Typography</title>
+<style>
+  :root { --background:#fafafa; --foreground:#18181b; --muted:#71717a; --faint:#a1a1aa; --surface-subtle:#f4f4f5; }
+  @media (prefers-color-scheme: dark) {
+    :root { --background:#09090b; --foreground:#fafafa; --muted:#a1a1aa; --faint:#71717a; --surface-subtle:#27272a; }
+  }
+  body { margin:0; padding:1.5rem; background:var(--background); color:var(--foreground); font-family:Geist,ui-sans-serif,system-ui,sans-serif; font-size:14px; }
+  .row { display:flex; align-items:baseline; gap:1rem; margin-bottom:1rem; }
+  .spec { width:180px; flex-shrink:0; font-size:11px; color:var(--faint); }
+</style>
+<div class="row"><span class="spec">text-2xl / 600 / tracking-tight</span><span style="font-size:24px;font-weight:600;letter-spacing:-0.025em">Page title</span></div>
+<div class="row"><span class="spec">text-sm / 600</span><span style="font-size:14px;font-weight:600">Section / card header</span></div>
+<div class="row"><span class="spec">text-sm / 500</span><span style="font-size:14px;font-weight:500">Row title, links</span></div>
+<div class="row"><span class="spec">text-sm / 400</span><span style="font-size:14px">Body text</span></div>
+<div class="row"><span class="spec">text-sm / 400 / muted</span><span style="font-size:14px;color:var(--muted)">Secondary text</span></div>
+<div class="row"><span class="spec">text-xs / 500 / muted</span><span style="font-size:12px;font-weight:500;color:var(--muted)">Field labels, badges</span></div>
+<div class="row"><span class="spec">mono / 0.85em</span><code style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;background:var(--surface-subtle);padding:2px 5px;border-radius:4px">inline code</code></div>

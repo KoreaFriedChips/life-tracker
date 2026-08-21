@@ -1,0 +1,37 @@
+<!-- @dsCard group="Components" name="Buttons" subtitle="Primary / secondary / ghost / danger, 2 sizes" -->
+<title>Buttons</title>
+<style>
+  :root { --background:#fafafa; --foreground:#18181b; --surface:#ffffff; --surface-subtle:#f4f4f5; --border:#e4e4e7; --muted:#71717a; --accent:#4f46e5; --accent-hover:#4338ca; --danger:#dc2626; --danger-soft:#fef2f2; }
+  @media (prefers-color-scheme: dark) {
+    :root { --background:#09090b; --foreground:#fafafa; --surface:#18181b; --surface-subtle:#27272a; --border:#27272a; --muted:#a1a1aa; --accent:#6366f1; --accent-hover:#818cf8; --danger:#f87171; --danger-soft:#450a0a; }
+  }
+  body { margin:0; padding:1.5rem; background:var(--background); color:var(--foreground); font-family:Geist,ui-sans-serif,system-ui,sans-serif; font-size:14px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:0.5rem; font-weight:500; border:none; cursor:pointer; font-family:inherit; height:36px; padding:0 16px; font-size:14px; transition:background-color .15s, color .15s; }
+  .btn.sm { height:32px; padding:0 12px; font-size:12px; }
+  .btn.primary { background:var(--accent); color:#fff; }
+  .btn.primary:hover { background:var(--accent-hover); }
+  .btn.secondary { background:var(--surface); color:var(--foreground); border:1px solid var(--border); }
+  .btn.secondary:hover { background:var(--surface-subtle); }
+  .btn.ghost { background:transparent; color:var(--muted); }
+  .btn.ghost:hover { background:var(--surface-subtle); color:var(--foreground); }
+  .btn.danger { background:transparent; color:var(--danger); }
+  .btn.danger:hover { background:var(--danger-soft); }
+  .btn:disabled { opacity:0.4; pointer-events:none; }
+  .row { display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; }
+</style>
+<div class="row">
+  <button class="btn primary">Add entry</button>
+  <button class="btn secondary">View graph</button>
+  <button class="btn ghost">Show completed</button>
+  <button class="btn danger">Delete</button>
+</div>
+<div class="row">
+  <button class="btn primary sm">Add</button>
+  <button class="btn secondary sm">Edit</button>
+  <button class="btn ghost sm">Clear</button>
+  <button class="btn danger sm">Delete</button>
+</div>
+<div class="row">
+  <button class="btn primary" disabled>Disabled</button>
+  <button class="btn secondary sm" disabled>&#8593;</button>
+</div>
