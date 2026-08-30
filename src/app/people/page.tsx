@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function PeoplePage() {
-  const db = getDb();
-  const people = listPeopleWithStaleness(db);
+export default async function PeoplePage() {
+  const db = await getDb();
+  const people = await listPeopleWithStaleness(db);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">

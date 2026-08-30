@@ -24,8 +24,8 @@ export default async function KnowledgePage({ searchParams }: PageProps<"/knowle
   const statusFilter = typeof params.status === "string" ? params.status : "";
   const tagFilter = typeof params.tag === "string" ? params.tag.trim() : "";
 
-  const db = getDb();
-  const allEntries = listKnowledgeEntries(db);
+  const db = await getDb();
+  const allEntries = await listKnowledgeEntries(db);
   const entries = allEntries.filter((entry) => {
     if (typeFilter && entry.type !== typeFilter) return false;
     if (statusFilter && entry.status !== statusFilter) return false;

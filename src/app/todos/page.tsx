@@ -26,9 +26,9 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
   const showCompleted = params.showCompleted === "1";
   const error = typeof params.error === "string" ? params.error : null;
 
-  const db = getDb();
-  const categories = listCategories(db);
-  const allTodos = listTodos(db);
+  const db = await getDb();
+  const categories = await listCategories(db);
+  const allTodos = await listTodos(db);
   const today = localToday();
 
   const openTodosByCategory = new Map<number, Todo[]>();

@@ -28,7 +28,7 @@ export async function addTodo(formData: FormData) {
   const dueDate = String(formData.get("dueDate") ?? "").trim();
 
   if (title) {
-    createTodo(getDb(), { title, categoryId, dueDate: dueDate || null });
+    await createTodo(await getDb(), { title, categoryId, dueDate: dueDate || null });
   }
 
   revalidatePath(TODOS_PATH);
@@ -37,14 +37,14 @@ export async function addTodo(formData: FormData) {
 /** Toggles a todo's done state (sets/clears completedAt). */
 export async function toggleTodo(formData: FormData) {
   const id = requireNumber(formData, "id");
-  toggleTodoDone(getDb(), id);
+  await toggleTodoDone(await getDb(), id);
   revalidatePath(TODOS_PATH);
 }
 
 /** Permanently deletes a todo (used for completed items). */
 export async function deleteTodoAction(formData: FormData) {
   const id = requireNumber(formData, "id");
-  deleteTodoRepo(getDb(), id);
+  await deleteTodoRepo(await getDb(), id);
   revalidatePath(TODOS_PATH);
 }
 
@@ -54,11 +54,11 @@ export async function addCategory(formData: FormData) {
 
   let errorMessage: string | null = null;
   if (name) {
-    const db = getDb();
-    const existing = listCategories(db);
+    const db = await getDb();
+    const existing = await listCategories(db);
     const maxSortOrder = existing.reduce((max, c) => Math.max(max, c.sortOrder), 0);
     try {
-      createCategory(db, { name, sortOrder: maxSortOrder + 10 });
+      await createCategory(db, { name, sortOrder: maxSortOrder + 10 });
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : "Could not add category.";
     }
@@ -79,7 +79,7 @@ export async function renameCategory(formData: FormData) {
   let errorMessage: string | null = null;
   if (name) {
     try {
-      updateCategory(getDb(), id, { name });
+      await updateCategory(await getDb(), id, { name });
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : "Could not rename category.";
     }
@@ -97,8 +97,8 @@ export async function moveCategory(formData: FormData) {
   const id = requireNumber(formData, "id");
   const direction = String(formData.get("direction") ?? "");
 
-  const db = getDb();
-  const ordered = listCategories(db);
+  const db = await getDb();
+  const ordered = await listCategories(db);
   const index = ordered.findIndex((c) => c.id === id);
   if (index === -1) return;
 
@@ -107,8 +107,8 @@ export async function moveCategory(formData: FormData) {
 
   const current = ordered[index];
   const neighbor = ordered[swapIndex];
-  updateCategory(db, current.id, { sortOrder: neighbor.sortOrder });
-  updateCategory(db, neighbor.id, { sortOrder: current.sortOrder });
+  await updateCategory(db, current.id, { sortOrder: neighbor.sortOrder });
+  await updateCategory(db, neighbor.id, { sortOrder: current.sortOrder });
 
   revalidatePath(TODOS_PATH);
 }
@@ -116,11 +116,11 @@ export async function moveCategory(formData: FormData) {
 /** Deletes a category. Blocked (redirects with a readable error) if it still has todos. */
 export async function deleteCategoryAction(formData: FormData) {
   const id = requireNumber(formData, "id");
-  const db = getDb();
+  const db = await getDb();
 
   let errorMessage: string | null = null;
   try {
-    deleteCategory(db, id);
+    await deleteCategory(db, id);
   } catch {
     errorMessage = "Cannot delete category: move or delete its to-dos first.";
   }

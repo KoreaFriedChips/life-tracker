@@ -17,7 +17,7 @@ export async function generateMetadata({
 }: PageProps<"/knowledge/[id]">): Promise<Metadata> {
   const { id: idParam } = await params;
   const id = Number(idParam);
-  const entry = Number.isFinite(id) ? getKnowledgeEntry(getDb(), id) : null;
+  const entry = Number.isFinite(id) ? await getKnowledgeEntry(await getDb(), id) : null;
   return { title: entry?.title ?? "Entry not found" };
 }
 
@@ -30,12 +30,12 @@ export default async function KnowledgeEntryPage({
   const search = await searchParams;
   const error = typeof search.error === "string" ? search.error : null;
 
-  const db = getDb();
-  const entry = Number.isFinite(id) ? getKnowledgeEntry(db, id) : null;
+  const db = await getDb();
+  const entry = Number.isFinite(id) ? await getKnowledgeEntry(db, id) : null;
   if (!entry) notFound();
 
-  const entryConnections = listConnectionsForEntry(db, entry.id);
-  const otherEntries = listKnowledgeEntries(db).filter((other) => other.id !== entry.id);
+  const entryConnections = await listConnectionsForEntry(db, entry.id);
+  const otherEntries = (await listKnowledgeEntries(db)).filter((other) => other.id !== entry.id);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">

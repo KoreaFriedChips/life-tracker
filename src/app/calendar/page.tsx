@@ -30,9 +30,9 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   const monthParam = typeof params.month === "string" ? params.month : undefined;
   const month = parseMonthParam(monthParam) ?? currentMonth();
 
-  const db = getDb();
-  const categories = listCategories(db);
-  const todos = listTodos(db);
+  const db = await getDb();
+  const categories = await listCategories(db);
+  const todos = await listTodos(db);
   const today = localToday();
 
   const completedByDay = new Map<string, Todo[]>();

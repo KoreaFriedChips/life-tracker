@@ -19,7 +19,7 @@ export async function addTodo(formData: FormData) {
   const categoryId = requireNumber(formData, "categoryId");
 
   if (title) {
-    createTodo(getDb(), { title, categoryId, dueDate: null });
+    await createTodo(await getDb(), { title, categoryId, dueDate: null });
   }
 
   revalidatePath(CALENDAR_PATH);
@@ -29,7 +29,7 @@ export async function addTodo(formData: FormData) {
 /** Toggles a todo's done state (sets/clears completedAt). */
 export async function toggleTodo(formData: FormData) {
   const id = requireNumber(formData, "id");
-  toggleTodoDone(getDb(), id);
+  await toggleTodoDone(await getDb(), id);
   revalidatePath(CALENDAR_PATH);
   revalidatePath(TODOS_PATH);
 }

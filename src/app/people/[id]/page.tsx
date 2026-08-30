@@ -14,7 +14,7 @@ import { addTouchpointAction, deletePersonAction, deleteTouchpointAction } from 
 export async function generateMetadata({ params }: PageProps<"/people/[id]">): Promise<Metadata> {
   const { id: idParam } = await params;
   const id = Number(idParam);
-  const person = Number.isFinite(id) ? getPerson(getDb(), id) : null;
+  const person = Number.isFinite(id) ? await getPerson(await getDb(), id) : null;
   return { title: person?.name ?? "Person not found" };
 }
 
@@ -22,11 +22,11 @@ export default async function PersonPage({ params }: PageProps<"/people/[id]">) 
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const db = getDb();
-  const person = Number.isFinite(id) ? getPerson(db, id) : null;
+  const db = await getDb();
+  const person = Number.isFinite(id) ? await getPerson(db, id) : null;
   if (!person) notFound();
 
-  const touchpoints = listTouchpoints(db, id);
+  const touchpoints = await listTouchpoints(db, id);
   const today = localToday();
 
   return (

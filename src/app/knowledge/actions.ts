@@ -33,7 +33,7 @@ export async function createEntryAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
-  const entry = createKnowledgeEntry(getDb(), {
+  const entry = await createKnowledgeEntry(await getDb(), {
     title,
     type: String(formData.get("type") ?? "book") as KnowledgeType,
     authors: parseList(formData, "authors"),
@@ -52,7 +52,7 @@ export async function updateEntryAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
-  updateKnowledgeEntry(getDb(), id, {
+  await updateKnowledgeEntry(await getDb(), id, {
     title,
     type: String(formData.get("type") ?? "book") as KnowledgeType,
     authors: parseList(formData, "authors"),
@@ -69,7 +69,7 @@ export async function updateEntryAction(formData: FormData) {
 /** Deletes a knowledge entry (cascades its connections) and redirects to the list. */
 export async function deleteEntryAction(formData: FormData) {
   const id = requireNumber(formData, "id");
-  deleteKnowledgeEntry(getDb(), id);
+  await deleteKnowledgeEntry(await getDb(), id);
 
   revalidatePath(KNOWLEDGE_PATH);
   redirect(KNOWLEDGE_PATH);
@@ -86,7 +86,7 @@ export async function addConnectionAction(formData: FormData) {
 
   let errorMessage: string | null = null;
   try {
-    addConnection(getDb(), entryId, otherEntryId, label || undefined);
+    await addConnection(await getDb(), entryId, otherEntryId, label || undefined);
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : "Could not add connection.";
   }
@@ -104,7 +104,7 @@ export async function deleteConnectionAction(formData: FormData) {
   const id = requireNumber(formData, "id");
   const entryId = requireNumber(formData, "entryId");
   const otherEntryId = requireNumber(formData, "otherEntryId");
-  deleteConnection(getDb(), id);
+  await deleteConnection(await getDb(), id);
 
   revalidatePath(`${KNOWLEDGE_PATH}/${entryId}`);
   revalidatePath(`${KNOWLEDGE_PATH}/${otherEntryId}`);
