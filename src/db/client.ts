@@ -51,7 +51,10 @@ export async function getDb(): Promise<AppDatabase> {
   await requireSession();
   if (!globalThis.__lifeTrackerDbPromise) {
     const url = process.env.TURSO_DATABASE_URL ?? "file:data/life.db";
-    globalThis.__lifeTrackerDbPromise = createDb(url, process.env.TURSO_AUTH_TOKEN);
+    globalThis.__lifeTrackerDbPromise = createDb(url, process.env.TURSO_AUTH_TOKEN).catch((err) => {
+      globalThis.__lifeTrackerDbPromise = undefined;
+      throw err;
+    });
   }
   return globalThis.__lifeTrackerDbPromise;
 }
