@@ -60,17 +60,17 @@ function toPerson(row: typeof people.$inferSelect): Person {
 
 // --- People ---
 
-export function listPeople(db: AppDatabase): Person[] {
-  return db.select().from(people).all().map(toPerson);
+export async function listPeople(db: AppDatabase): Promise<Person[]> {
+  return (await db.select().from(people).all()).map(toPerson);
 }
 
-export function getPerson(db: AppDatabase, id: number): Person | null {
-  const row = db.select().from(people).where(eq(people.id, id)).get();
+export async function getPerson(db: AppDatabase, id: number): Promise<Person | null> {
+  const row = await db.select().from(people).where(eq(people.id, id)).get();
   return row ? toPerson(row) : null;
 }
 
-export function createPerson(db: AppDatabase, input: NewPerson): Person {
-  const [row] = db
+export async function createPerson(db: AppDatabase, input: NewPerson): Promise<Person> {
+  const [row] = await db
     .insert(people)
     .values({
       name: input.name,
@@ -83,8 +83,12 @@ export function createPerson(db: AppDatabase, input: NewPerson): Person {
   return toPerson(row);
 }
 
-export function updatePerson(db: AppDatabase, id: number, input: UpdatePersonInput): Person {
-  const [row] = db
+export async function updatePerson(
+  db: AppDatabase,
+  id: number,
+  input: UpdatePersonInput,
+): Promise<Person> {
+  const [row] = await db
     .update(people)
     .set({
       ...(input.name !== undefined ? { name: input.name } : {}),
@@ -102,13 +106,13 @@ export function updatePerson(db: AppDatabase, id: number, input: UpdatePersonInp
   return toPerson(row);
 }
 
-export function deletePerson(db: AppDatabase, id: number): void {
-  db.delete(people).where(eq(people.id, id)).run();
+export async function deletePerson(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(people).where(eq(people.id, id)).run();
 }
 
 // --- Touchpoints ---
 
-export function listTouchpoints(db: AppDatabase, personId: number): Touchpoint[] {
+export async function listTouchpoints(db: AppDatabase, personId: number): Promise<Touchpoint[]> {
   return db
     .select()
     .from(touchpoints)
@@ -117,8 +121,8 @@ export function listTouchpoints(db: AppDatabase, personId: number): Touchpoint[]
     .all();
 }
 
-export function addTouchpoint(db: AppDatabase, input: NewTouchpoint): Touchpoint {
-  const [row] = db
+export async function addTouchpoint(db: AppDatabase, input: NewTouchpoint): Promise<Touchpoint> {
+  const [row] = await db
     .insert(touchpoints)
     .values({
       personId: input.personId,
@@ -130,8 +134,8 @@ export function addTouchpoint(db: AppDatabase, input: NewTouchpoint): Touchpoint
   return row;
 }
 
-export function deleteTouchpoint(db: AppDatabase, id: number): void {
-  db.delete(touchpoints).where(eq(touchpoints.id, id)).run();
+export async function deleteTouchpoint(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(touchpoints).where(eq(touchpoints.id, id)).run();
 }
 
 // --- Staleness ---
@@ -140,8 +144,8 @@ export function deleteTouchpoint(db: AppDatabase, id: number): void {
  * All people with their derived last-touchpoint date and days-since-contact.
  * Sorted longest-since-contact first, with never-contacted people at the very top.
  */
-export function listPeopleWithStaleness(db: AppDatabase): PersonWithStaleness[] {
-  const rows = db
+export async function listPeopleWithStaleness(db: AppDatabase): Promise<PersonWithStaleness[]> {
+  const rows = await db
     .select({
       id: people.id,
       name: people.name,

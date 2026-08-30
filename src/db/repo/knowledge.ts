@@ -69,19 +69,35 @@ function toKnowledgeEntry(row: typeof knowledgeEntries.$inferSelect): KnowledgeE
   };
 }
 
-// --- Knowledge entries ---
-
-export function listKnowledgeEntries(db: AppDatabase): KnowledgeEntry[] {
-  return db.select().from(knowledgeEntries).all().map(toKnowledgeEntry);
+/**
+ * True if `err` — or the underlying driver error libsql wraps it in via `.cause` —
+ * has a message containing `substring`. Needed because drizzle's libsql driver wraps
+ * driver errors in a `DrizzleQueryError` whose own `.message` is a generic "Failed
+ * query: ..." string; the original SQLite message (e.g. "UNIQUE constraint failed: ...")
+ * lives one level down at `err.cause.message`.
+ */
+function causedBy(err: unknown, substring: string): boolean {
+  const message =
+    err instanceof Error && err.cause instanceof Error ? err.cause.message : err instanceof Error ? err.message : "";
+  return message.includes(substring);
 }
 
-export function getKnowledgeEntry(db: AppDatabase, id: number): KnowledgeEntry | null {
-  const row = db.select().from(knowledgeEntries).where(eq(knowledgeEntries.id, id)).get();
+// --- Knowledge entries ---
+
+export async function listKnowledgeEntries(db: AppDatabase): Promise<KnowledgeEntry[]> {
+  return (await db.select().from(knowledgeEntries).all()).map(toKnowledgeEntry);
+}
+
+export async function getKnowledgeEntry(db: AppDatabase, id: number): Promise<KnowledgeEntry | null> {
+  const row = await db.select().from(knowledgeEntries).where(eq(knowledgeEntries.id, id)).get();
   return row ? toKnowledgeEntry(row) : null;
 }
 
-export function createKnowledgeEntry(db: AppDatabase, input: NewKnowledgeEntry): KnowledgeEntry {
-  const [row] = db
+export async function createKnowledgeEntry(
+  db: AppDatabase,
+  input: NewKnowledgeEntry,
+): Promise<KnowledgeEntry> {
+  const [row] = await db
     .insert(knowledgeEntries)
     .values({
       title: input.title,
@@ -96,12 +112,12 @@ export function createKnowledgeEntry(db: AppDatabase, input: NewKnowledgeEntry):
   return toKnowledgeEntry(row);
 }
 
-export function updateKnowledgeEntry(
+export async function updateKnowledgeEntry(
   db: AppDatabase,
   id: number,
   input: UpdateKnowledgeEntryInput,
-): KnowledgeEntry {
-  const [row] = db
+): Promise<KnowledgeEntry> {
+  const [row] = await db
     .update(knowledgeEntries)
     .set({
       ...(input.title !== undefined ? { title: input.title } : {}),
@@ -119,70 +135,75 @@ export function updateKnowledgeEntry(
   return toKnowledgeEntry(row);
 }
 
-export function deleteKnowledgeEntry(db: AppDatabase, id: number): void {
-  db.delete(knowledgeEntries).where(eq(knowledgeEntries.id, id)).run();
+export async function deleteKnowledgeEntry(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(knowledgeEntries).where(eq(knowledgeEntries.id, id)).run();
 }
 
 // --- Connections ---
 
 /** Adds an undirected connection between two entries, canonically storing the smaller id in entryIdA. */
-export function addConnection(
+export async function addConnection(
   db: AppDatabase,
   entryIdA: number,
   entryIdB: number,
   label?: string,
-): Connection {
+): Promise<Connection> {
   if (entryIdA === entryIdB) {
     throw new Error("Cannot connect a knowledge entry to itself.");
   }
   const [smaller, larger] = entryIdA < entryIdB ? [entryIdA, entryIdB] : [entryIdB, entryIdA];
 
   try {
-    const [row] = db
+    const [row] = await db
       .insert(connections)
       .values({ entryIdA: smaller, entryIdB: larger, label: label ?? null })
       .returning()
       .all();
     return row;
   } catch (err) {
-    if (err instanceof Error && err.message.includes("UNIQUE constraint failed")) {
+    if (causedBy(err, "UNIQUE constraint failed")) {
       throw new Error("A connection between these two entries already exists.");
     }
     throw err;
   }
 }
 
-export function deleteConnection(db: AppDatabase, id: number): void {
-  db.delete(connections).where(eq(connections.id, id)).run();
+export async function deleteConnection(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(connections).where(eq(connections.id, id)).run();
 }
 
 /** All connections touching `entryId`, each resolved to the OTHER entry's id/title (either side of the pair). */
-export function listConnectionsForEntry(db: AppDatabase, entryId: number): ConnectionWithOtherEntry[] {
-  const rows = db
+export async function listConnectionsForEntry(
+  db: AppDatabase,
+  entryId: number,
+): Promise<ConnectionWithOtherEntry[]> {
+  const rows = await db
     .select()
     .from(connections)
     .where(or(eq(connections.entryIdA, entryId), eq(connections.entryIdB, entryId)))
     .all();
 
-  return rows.map((row) => {
-    const otherEntryId = row.entryIdA === entryId ? row.entryIdB : row.entryIdA;
-    const other = getKnowledgeEntry(db, otherEntryId);
-    return {
-      id: row.id,
-      otherEntryId,
-      otherEntryTitle: other?.title ?? "Unknown entry",
-      label: row.label,
-    };
-  });
+  return Promise.all(
+    rows.map(async (row) => {
+      const otherEntryId = row.entryIdA === entryId ? row.entryIdB : row.entryIdA;
+      const other = await getKnowledgeEntry(db, otherEntryId);
+      return {
+        id: row.id,
+        otherEntryId,
+        otherEntryTitle: other?.title ?? "Unknown entry",
+        label: row.label,
+      };
+    }),
+  );
 }
 
 /** All entries as graph nodes (including unconnected ones), plus all connections as links. */
-export function getGraphData(db: AppDatabase): GraphData {
-  const entries = db
+export async function getGraphData(db: AppDatabase): Promise<GraphData> {
+  const entries = await db
     .select({ id: knowledgeEntries.id, title: knowledgeEntries.title, type: knowledgeEntries.type })
     .from(knowledgeEntries)
     .all();
-  const edges = db.select().from(connections).all();
+  const edges = await db.select().from(connections).all();
 
   return {
     nodes: entries.map((e) => ({ id: e.id, title: e.title, type: e.type as KnowledgeType })),

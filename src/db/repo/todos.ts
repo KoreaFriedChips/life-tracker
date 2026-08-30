@@ -51,46 +51,68 @@ function toTodo(row: typeof todos.$inferSelect): Todo {
   };
 }
 
+/**
+ * True if `err` — or the underlying driver error libsql wraps it in via `.cause` —
+ * has a message containing `substring`. Needed because drizzle's libsql driver wraps
+ * driver errors in a `DrizzleQueryError` whose own `.message` is a generic "Failed
+ * query: ..." string; the original SQLite message (e.g. "UNIQUE constraint failed: ...")
+ * lives one level down at `err.cause.message`.
+ */
+function causedBy(err: unknown, substring: string): boolean {
+  const message =
+    err instanceof Error && err.cause instanceof Error ? err.cause.message : err instanceof Error ? err.message : "";
+  return message.includes(substring);
+}
+
 // --- Categories ---
 
-export function listCategories(db: AppDatabase): Category[] {
+export async function listCategories(db: AppDatabase): Promise<Category[]> {
   return db.select().from(categories).orderBy(categories.sortOrder).all();
 }
 
-export function createCategory(db: AppDatabase, input: NewCategory): Category {
+export async function createCategory(db: AppDatabase, input: NewCategory): Promise<Category> {
   try {
-    const [row] = db
+    const [row] = await db
       .insert(categories)
       .values({ name: input.name, sortOrder: input.sortOrder ?? 0 })
       .returning()
       .all();
     return row;
   } catch (err) {
-    if (err instanceof Error && err.message.includes("UNIQUE constraint failed")) {
+    if (causedBy(err, "UNIQUE constraint failed")) {
       throw new Error(`A category named "${input.name}" already exists.`);
     }
     throw err;
   }
 }
 
-export function updateCategory(db: AppDatabase, id: number, input: Partial<NewCategory>): Category {
+export async function updateCategory(
+  db: AppDatabase,
+  id: number,
+  input: Partial<NewCategory>,
+): Promise<Category> {
   try {
-    const [row] = db.update(categories).set(input).where(eq(categories.id, id)).returning().all();
+    const [row] = await db
+      .update(categories)
+      .set(input)
+      .where(eq(categories.id, id))
+      .returning()
+      .all();
     if (!row) throw new Error(`Category ${id} not found`);
     return row;
   } catch (err) {
-    if (err instanceof Error && err.message.includes("UNIQUE constraint failed")) {
+    if (causedBy(err, "UNIQUE constraint failed")) {
       throw new Error(`A category named "${input.name}" already exists.`);
     }
     throw err;
   }
 }
 
-export function deleteCategory(db: AppDatabase, id: number): void {
+export async function deleteCategory(db: AppDatabase, id: number): Promise<void> {
   try {
-    db.delete(categories).where(eq(categories.id, id)).run();
+    await db.delete(categories).where(eq(categories.id, id)).run();
   } catch (err) {
-    if (err instanceof Error && err.message.includes("FOREIGN KEY constraint failed")) {
+    if (causedBy(err, "FOREIGN KEY constraint failed")) {
       throw new Error("Cannot delete category: it still has todos assigned to it.");
     }
     throw err;
@@ -99,17 +121,17 @@ export function deleteCategory(db: AppDatabase, id: number): void {
 
 // --- Todos ---
 
-export function listTodos(db: AppDatabase): Todo[] {
-  return db.select().from(todos).all().map(toTodo);
+export async function listTodos(db: AppDatabase): Promise<Todo[]> {
+  return (await db.select().from(todos).all()).map(toTodo);
 }
 
-export function getTodo(db: AppDatabase, id: number): Todo | null {
-  const row = db.select().from(todos).where(eq(todos.id, id)).get();
+export async function getTodo(db: AppDatabase, id: number): Promise<Todo | null> {
+  const row = await db.select().from(todos).where(eq(todos.id, id)).get();
   return row ? toTodo(row) : null;
 }
 
-export function createTodo(db: AppDatabase, input: NewTodo): Todo {
-  const [row] = db
+export async function createTodo(db: AppDatabase, input: NewTodo): Promise<Todo> {
+  const [row] = await db
     .insert(todos)
     .values({
       title: input.title,
@@ -122,23 +144,27 @@ export function createTodo(db: AppDatabase, input: NewTodo): Todo {
   return toTodo(row);
 }
 
-export function updateTodo(db: AppDatabase, id: number, input: UpdateTodoInput): Todo {
-  const [row] = db.update(todos).set(input).where(eq(todos.id, id)).returning().all();
+export async function updateTodo(
+  db: AppDatabase,
+  id: number,
+  input: UpdateTodoInput,
+): Promise<Todo> {
+  const [row] = await db.update(todos).set(input).where(eq(todos.id, id)).returning().all();
   if (!row) throw new Error(`Todo ${id} not found`);
   return toTodo(row);
 }
 
-export function deleteTodo(db: AppDatabase, id: number): void {
-  db.delete(todos).where(eq(todos.id, id)).run();
+export async function deleteTodo(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(todos).where(eq(todos.id, id)).run();
 }
 
 /** Marks a todo done (setting completedAt to now) or undone (clearing completedAt) based on its current state. */
-export function toggleTodoDone(db: AppDatabase, id: number): Todo {
-  const existing = db.select().from(todos).where(eq(todos.id, id)).get();
+export async function toggleTodoDone(db: AppDatabase, id: number): Promise<Todo> {
+  const existing = await db.select().from(todos).where(eq(todos.id, id)).get();
   if (!existing) throw new Error(`Todo ${id} not found`);
 
   const willBeDone = existing.done === 0;
-  const [row] = db
+  const [row] = await db
     .update(todos)
     .set({
       done: willBeDone ? 1 : 0,

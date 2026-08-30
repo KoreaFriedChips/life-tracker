@@ -1,40 +1,51 @@
 import fs from "node:fs";
 import path from "node:path";
-import Database from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { createClient } from "@libsql/client";
+import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import * as schema from "./schema";
 import { seedCategories } from "./seed";
 
 const MIGRATIONS_FOLDER = path.join(process.cwd(), "drizzle");
 
-export type AppDatabase = BetterSQLite3Database<typeof schema>;
+export type AppDatabase = LibSQLDatabase<typeof schema>;
 
-/** Opens (and migrates + seeds) a database at `dbPath`. Pass ':memory:' for an in-memory database. */
-export function createDb(dbPath: string): AppDatabase {
-  const sqlite = new Database(dbPath);
-  sqlite.pragma("foreign_keys = ON");
-  sqlite.pragma("journal_mode = WAL");
+/**
+ * Opens (and migrates + seeds) a database at `url`. Local URLs need the
+ * `file:` prefix; pass ':memory:' for an in-memory database. Remote Turso
+ * URLs (libsql://...) also need `authToken`.
+ */
+export async function createDb(url: string, authToken?: string): Promise<AppDatabase> {
+  const isLocal = url.startsWith("file:") || url === ":memory:";
+  if (url.startsWith("file:")) {
+    fs.mkdirSync(path.dirname(url.slice("file:".length)), { recursive: true });
+  }
 
-  const db = drizzle(sqlite, { schema });
-  migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
-  seedCategories(db);
+  const client = createClient({ url, authToken });
+  if (isLocal) {
+    // Local SQLite defaults FKs off; Turso enforces them server-side (verified at deploy).
+    await client.execute("PRAGMA foreign_keys = ON");
+  }
+  if (url.startsWith("file:")) {
+    await client.execute("PRAGMA journal_mode = WAL");
+  }
+
+  const db = drizzle({ client, schema });
+  await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+  await seedCategories(db);
 
   return db;
 }
 
 declare global {
-  var __lifeTrackerDb: AppDatabase | undefined;
+  var __lifeTrackerDbPromise: Promise<AppDatabase> | undefined;
 }
 
 /** The app-wide singleton database, cached on globalThis so dev HMR doesn't reopen handles. */
-export function getDb(): AppDatabase {
-  if (!globalThis.__lifeTrackerDb) {
-    const dataDir = path.join(process.cwd(), "data");
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    globalThis.__lifeTrackerDb = createDb(path.join(dataDir, "life.db"));
+export function getDb(): Promise<AppDatabase> {
+  if (!globalThis.__lifeTrackerDbPromise) {
+    const url = process.env.TURSO_DATABASE_URL ?? "file:data/life.db";
+    globalThis.__lifeTrackerDbPromise = createDb(url, process.env.TURSO_AUTH_TOKEN);
   }
-  return globalThis.__lifeTrackerDb;
+  return globalThis.__lifeTrackerDbPromise;
 }
