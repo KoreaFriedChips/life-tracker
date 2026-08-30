@@ -85,8 +85,9 @@ export async function addConnectionAction(formData: FormData) {
   const label = String(formData.get("label") ?? "").trim();
 
   let errorMessage: string | null = null;
+  const db = await getDb();
   try {
-    await addConnection(await getDb(), entryId, otherEntryId, label || undefined);
+    await addConnection(db, entryId, otherEntryId, label || undefined);
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : "Could not add connection.";
   }

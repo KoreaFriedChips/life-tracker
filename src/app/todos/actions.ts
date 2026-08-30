@@ -78,8 +78,9 @@ export async function renameCategory(formData: FormData) {
 
   let errorMessage: string | null = null;
   if (name) {
+    const db = await getDb();
     try {
-      await updateCategory(await getDb(), id, { name });
+      await updateCategory(db, id, { name });
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : "Could not rename category.";
     }

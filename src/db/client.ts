@@ -3,6 +3,7 @@ import path from "node:path";
 import { createClient } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
+import { requireSession } from "@/lib/auth";
 import * as schema from "./schema";
 import { seedCategories } from "./seed";
 
@@ -41,8 +42,13 @@ declare global {
   var __lifeTrackerDbPromise: Promise<AppDatabase> | undefined;
 }
 
-/** The app-wide singleton database, cached on globalThis so dev HMR doesn't reopen handles. */
-export function getDb(): Promise<AppDatabase> {
+/**
+ * The app-wide singleton database, cached on globalThis so dev HMR doesn't reopen handles.
+ * Doubles as the data-access-layer auth gate: every page and server action reaches the
+ * database through here, and unauthenticated requests are redirected before touching it.
+ */
+export async function getDb(): Promise<AppDatabase> {
+  await requireSession();
   if (!globalThis.__lifeTrackerDbPromise) {
     const url = process.env.TURSO_DATABASE_URL ?? "file:data/life.db";
     globalThis.__lifeTrackerDbPromise = createDb(url, process.env.TURSO_AUTH_TOKEN);

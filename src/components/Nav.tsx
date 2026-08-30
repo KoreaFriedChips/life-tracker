@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/login/actions";
 
 const NAV_LINKS = [
   { href: "/todos", label: "To-dos" },
@@ -12,6 +13,7 @@ const NAV_LINKS = [
 
 export default function Nav() {
   const pathname = usePathname();
+  if (pathname === "/login") return null;
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
@@ -38,6 +40,14 @@ export default function Nav() {
             );
           })}
         </ul>
+        <form action={logout} className="ml-auto">
+          <button
+            type="submit"
+            className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
+          >
+            Log out
+          </button>
+        </form>
       </nav>
     </header>
   );
