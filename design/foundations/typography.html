@@ -1,18 +1,19 @@
-<!-- @dsCard group="Type" name="Typography" subtitle="Geist sans, Geist Mono for code" -->
+<!-- @dsCard group="Type" name="Typography" subtitle="Geist, tightened Linear-style scale, -0.006em body tracking" -->
 <title>Typography</title>
 <style>
-  :root { --background:#fafafa; --foreground:#18181b; --muted:#71717a; --faint:#a1a1aa; --surface-subtle:#f4f4f5; }
+  :root { --background:#fcfcfd; --foreground:#1c1d21; --surface:#ffffff; --surface-subtle:#f4f5f8; --surface-raised:#ffffff; --border:#e9eaf0; --border-strong:#d9dbe4; --muted:#6b6f80; --faint:#9b9fb0; --accent:#5e6ad2; --accent-hover:#5158bb; --accent-soft:#eef0fb; --accent-soft-fg:#4a51ad; --danger:#d5453c; --danger-soft:#fdf0ef; --danger-soft-fg:#b03a32; --success-soft:#eefaf2; --success-soft-fg:#1a7f46; --warning-soft:#fdf6e8; --warning-soft-fg:#a16207; --ring:color-mix(in srgb, var(--accent) 55%, transparent); --sh-xs:0 1px 2px rgba(16,17,20,0.04); --sh-card:0 1px 2px rgba(16,17,20,0.04), 0 2px 8px -2px rgba(16,17,20,0.06); --sh-pop:0 4px 16px -4px rgba(16,17,20,0.16), 0 1px 3px rgba(16,17,20,0.08); --sh-btn-primary:inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 2px rgba(78,87,190,0.35); --radius-sm:6px; --radius-md:8px; --radius-lg:10px; --radius-xl:14px; }
   @media (prefers-color-scheme: dark) {
-    :root { --background:#09090b; --foreground:#fafafa; --muted:#a1a1aa; --faint:#71717a; --surface-subtle:#27272a; }
+    :root { --background:#0b0c0e; --foreground:#eeeff2; --surface:#16171b; --surface-subtle:#1f2126; --surface-raised:#191a1f; --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.14); --muted:#9a9ea9; --faint:#62666f; --accent:#6e79d6; --accent-hover:#828cdf; --accent-soft:rgba(110,121,214,0.16); --accent-soft-fg:#a5ade8; --danger:#ec5f57; --danger-soft:rgba(236,95,87,0.14); --danger-soft-fg:#f2938d; --success-soft:rgba(63,185,111,0.14); --success-soft-fg:#6fd396; --warning-soft:rgba(245,184,73,0.14); --warning-soft-fg:#e8b04b; --ring:color-mix(in srgb, var(--accent) 60%, transparent); --sh-xs:0 0 0 1px rgba(255,255,255,0.02); --sh-card:0 0 0 1px rgba(255,255,255,0.02); --sh-pop:0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04); --sh-btn-primary:inset 0 1px 0 rgba(255,255,255,0.14), 0 0 12px rgba(94,106,210,0.25); }
   }
-  body { margin:0; padding:1.5rem; background:var(--background); color:var(--foreground); font-family:Geist,ui-sans-serif,system-ui,sans-serif; font-size:14px; }
+  body { margin:0; padding:1.5rem; background:var(--background); color:var(--foreground); font-family:Geist,ui-sans-serif,system-ui,sans-serif; font-size:14px; letter-spacing:-0.006em; }
   .row { display:flex; align-items:baseline; gap:1rem; margin-bottom:1rem; }
-  .spec { width:180px; flex-shrink:0; font-size:11px; color:var(--faint); }
+  .spec { width:200px; flex-shrink:0; font-size:11px; color:var(--faint); }
 </style>
-<div class="row"><span class="spec">text-2xl / 600 / tracking-tight</span><span style="font-size:24px;font-weight:600;letter-spacing:-0.025em">Page title</span></div>
-<div class="row"><span class="spec">text-sm / 600</span><span style="font-size:14px;font-weight:600">Section / card header</span></div>
+<div class="row"><span class="spec">text-xl / 600 / -0.02em</span><span style="font-size:20px;font-weight:600;letter-spacing:-0.02em">Page title</span></div>
+<div class="row"><span class="spec">text-sm / 600 / -0.01em</span><span style="font-size:14px;font-weight:600;letter-spacing:-0.01em">Section / card header</span></div>
 <div class="row"><span class="spec">text-sm / 500</span><span style="font-size:14px;font-weight:500">Row title, links</span></div>
 <div class="row"><span class="spec">text-sm / 400</span><span style="font-size:14px">Body text</span></div>
 <div class="row"><span class="spec">text-sm / 400 / muted</span><span style="font-size:14px;color:var(--muted)">Secondary text</span></div>
 <div class="row"><span class="spec">text-xs / 500 / muted</span><span style="font-size:12px;font-weight:500;color:var(--muted)">Field labels, badges</span></div>
-<div class="row"><span class="spec">mono / 0.85em</span><code style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;background:var(--surface-subtle);padding:2px 5px;border-radius:4px">inline code</code></div>
+<div class="row"><span class="spec">text-xs / 400 / faint / tabular</span><span style="font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums">Counts &amp; dates · 12 open · 2026-08-31</span></div>
+<div class="row"><span class="spec">mono / 0.85em</span><code style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;background:var(--surface-subtle);padding:2px 5px;border-radius:var(--radius-sm)">inline code</code></div>
