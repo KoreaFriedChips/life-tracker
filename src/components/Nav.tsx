@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
+import CommandPalette from "@/components/CommandPalette";
 
 const NAV_LINKS = [
   { href: "/", label: "Today" },
@@ -41,14 +42,17 @@ export default function Nav() {
             );
           })}
         </ul>
-        <form action={logout} className="ml-auto">
-          <button
-            type="submit"
-            className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
-          >
-            Log out
-          </button>
-        </form>
+        <div className="ml-auto flex items-center gap-1">
+          <CommandPalette />
+          <form action={logout}>
+            <button
+              type="submit"
+              className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
+            >
+              Log out
+            </button>
+          </form>
+        </div>
       </nav>
     </header>
   );

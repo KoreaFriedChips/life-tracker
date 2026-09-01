@@ -2,11 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
-import { toggleTodoDone } from "@/db/repo/todos";
+import { listKnowledgeEntries, createKnowledgeEntry } from "@/db/repo/knowledge";
+import { listPeople } from "@/db/repo/people";
+import { createTodo, listCategories, listTodos, toggleTodoDone, type Category } from "@/db/repo/todos";
+import {
+  KNOWLEDGE_TYPES,
+  searchPaletteData,
+  type CaptureResult,
+  type PaletteResults,
+} from "@/lib/paletteSearch";
 
 const HOME_PATH = "/";
 const TODOS_PATH = "/todos";
 const CALENDAR_PATH = "/calendar";
+const KNOWLEDGE_PATH = "/knowledge";
 
 function requireNumber(formData: FormData, key: string): number {
   const value = Number(formData.get(key));
@@ -21,4 +30,57 @@ export async function toggleTodo(formData: FormData) {
   revalidatePath(HOME_PATH);
   revalidatePath(TODOS_PATH);
   revalidatePath(CALENDAR_PATH);
+}
+
+/** Searches open todos, people, and knowledge entries for the command palette. */
+export async function searchPalette(query: string): Promise<PaletteResults> {
+  const db = await getDb();
+  const [todos, people, entries] = await Promise.all([
+    listTodos(db),
+    listPeople(db),
+    listKnowledgeEntries(db),
+  ]);
+  return searchPaletteData({ todos, people, entries }, query);
+}
+
+/** Categories for the palette's quick-create todo select, in sort order. */
+export async function getCaptureCategories(): Promise<Category[]> {
+  return listCategories(await getDb());
+}
+
+/** Quick-creates a todo from the palette. */
+export async function createPaletteTodo(input: {
+  title: string;
+  categoryId: number;
+}): Promise<CaptureResult> {
+  const title = input.title.trim();
+  if (!title) return { ok: false, error: "Title is required." };
+  if (!Number.isFinite(input.categoryId)) return { ok: false, error: "Pick a category." };
+  try {
+    await createTodo(await getDb(), { title, categoryId: input.categoryId });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not add to-do." };
+  }
+  revalidatePath(HOME_PATH);
+  revalidatePath(TODOS_PATH);
+  revalidatePath(CALENDAR_PATH);
+  return { ok: true };
+}
+
+/** Quick-creates a knowledge entry from the palette (status defaults to "next"). */
+export async function createPaletteKnowledge(input: {
+  title: string;
+  type: string;
+}): Promise<CaptureResult> {
+  const title = input.title.trim();
+  if (!title) return { ok: false, error: "Title is required." };
+  const type = KNOWLEDGE_TYPES.find((t) => t === input.type) ?? "book";
+  try {
+    await createKnowledgeEntry(await getDb(), { title, type });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not add entry." };
+  }
+  revalidatePath(HOME_PATH);
+  revalidatePath(KNOWLEDGE_PATH);
+  return { ok: true };
 }
