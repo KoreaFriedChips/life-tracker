@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
+  // cover: extend the page under the iOS home indicator so the fixed tab bar's
+  // background fills it; the bar and body pad by env(safe-area-inset-*).
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#4f46e5" },
     { media: "(prefers-color-scheme: dark)", color: "#6366f1" },
@@ -46,7 +49,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <TimeZoneSync />
         <Nav />
-        <main className="flex flex-1 flex-col">{children}</main>
+        {/* Bottom padding below sm clears Nav's fixed tab bar (h-12 + safe area). */}
+        <main className="flex flex-1 flex-col pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pb-0">
+          {children}
+        </main>
       </body>
     </html>
   );

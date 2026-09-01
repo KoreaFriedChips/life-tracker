@@ -163,7 +163,7 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
 
         <div className="flex flex-col gap-2 border-t border-border px-4 py-3">
           {categories.map((category, index) => (
-            <div key={category.id} className="flex items-center gap-2">
+            <div key={category.id} className="flex flex-wrap items-center gap-2">
               <form action={moveCategory} className="flex gap-1">
                 <input type="hidden" name="id" value={category.id} />
                 <Button

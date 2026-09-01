@@ -91,7 +91,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
     <div className="flex w-full flex-1 flex-col gap-4 px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <Link
             href={`/calendar?month=${day ? day.slice(0, 7) : formatMonthParam(month)}`}
             className={day ? buttonClassName("ghost", "sm") : TOGGLE_ACTIVE}
