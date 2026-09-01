@@ -54,6 +54,7 @@ export default async function KnowledgePage({ searchParams }: PageProps<"/knowle
           <option value="article">Article</option>
           <option value="paper">Paper</option>
           <option value="video">Video</option>
+          <option value="thought">Thought</option>
         </Select>
 
         <Select name="status" defaultValue={statusFilter}>

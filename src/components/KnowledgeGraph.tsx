@@ -14,6 +14,7 @@ const TYPE_COLORS: Record<KnowledgeType, string> = {
   article: "#22c55e",
   paper: "#f97316",
   video: "#ef4444",
+  thought: "#a855f7",
 };
 
 const TYPE_LABELS: Record<KnowledgeType, string> = {
@@ -21,6 +22,7 @@ const TYPE_LABELS: Record<KnowledgeType, string> = {
   article: "Article",
   paper: "Paper",
   video: "Video",
+  thought: "Thought",
 };
 
 function GraphLegend() {

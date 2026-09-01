@@ -46,6 +46,20 @@ describe("knowledge repo", () => {
     expect(fetched).toEqual(created);
   });
 
+  it("stores thought entries captured from conversations", async () => {
+    const created = await createKnowledgeEntry(db, {
+      title: "Careers compound like interest",
+      type: "thought",
+      authors: ["Jamie"],
+      tags: ["career"],
+    });
+
+    expect(created.type).toBe("thought");
+
+    const fetched = await getKnowledgeEntry(db, created.id);
+    expect(fetched).toEqual(created);
+  });
+
   it("defaults url to null, sets it on update, and clears it with null", async () => {
     const created = await createKnowledgeEntry(db, { title: "Some Article", type: "article" });
     expect(created.url).toBeNull();

@@ -3,7 +3,7 @@ import type { AppDatabase } from "../client";
 import { causedBy } from "../errors";
 import { connections, knowledgeEntries } from "../schema";
 
-export type KnowledgeType = "book" | "article" | "paper" | "video";
+export type KnowledgeType = "book" | "article" | "paper" | "video" | "thought";
 export type KnowledgeStatus = "next" | "in_progress" | "completed";
 
 export interface KnowledgeEntry {

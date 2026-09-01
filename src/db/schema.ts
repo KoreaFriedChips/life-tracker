@@ -16,7 +16,7 @@ export const knowledgeEntries = sqliteTable(
     updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
   },
   (table) => [
-    check("knowledge_entries_type_check", sql`${table.type} IN ('book','article','paper','video')`),
+    check("knowledge_entries_type_check", sql`${table.type} IN ('book','article','paper','video','thought')`),
     check(
       "knowledge_entries_status_check",
       sql`${table.status} IN ('next','in_progress','completed')`,
