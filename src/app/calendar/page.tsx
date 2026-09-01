@@ -3,16 +3,20 @@ import Link from "next/link";
 import { getDb } from "@/db/client";
 import { listCategories, listTodos, type Todo } from "@/db/repo/todos";
 import {
+  addDays,
   addMonths,
   currentMonth,
+  dayLabel,
   formatMonthParam,
   localDateOf,
   localToday,
   monthGridDates,
   monthLabel,
+  parseDayParam,
   parseMonthParam,
 } from "@/lib/dates";
 import CalendarTodoItem from "@/components/CalendarTodoItem";
+import TodoItem from "@/components/TodoItem";
 import { Button, buttonClassName } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { Input, Select } from "@/components/ui/fields";
@@ -25,10 +29,14 @@ export const metadata: Metadata = {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_CELL_ENTRIES = 5;
 
+const TOGGLE_ACTIVE =
+  "inline-flex h-8 items-center rounded-lg bg-surface-subtle px-3 text-xs font-medium text-foreground";
+
 export default async function CalendarPage({ searchParams }: PageProps<"/calendar">) {
   const params = await searchParams;
   const monthParam = typeof params.month === "string" ? params.month : undefined;
   const month = parseMonthParam(monthParam) ?? currentMonth();
+  const day = parseDayParam(typeof params.day === "string" ? params.day : undefined);
 
   const db = await getDb();
   const categories = await listCategories(db);
@@ -48,6 +56,10 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   }
   const openTodos = todos.filter((todo) => !todo.done);
 
+  const completedOnDay = day ? (completedByDay.get(day) ?? []) : [];
+  const openForDay =
+    day === null ? [] : day === today ? openTodos : openTodos.filter((todo) => todo.dueDate === day);
+
   const monthPrefix = formatMonthParam(month);
 
   return (
@@ -56,21 +68,57 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
         <div className="flex items-center gap-1">
           <Link
-            href={`/calendar?month=${formatMonthParam(addMonths(month, -1))}`}
-            className={buttonClassName("ghost", "sm")}
+            href={`/calendar?month=${day ? day.slice(0, 7) : formatMonthParam(month)}`}
+            className={day ? buttonClassName("ghost", "sm") : TOGGLE_ACTIVE}
           >
-            ← Prev
+            Month
           </Link>
-          <span className="px-2 text-sm font-medium">{monthLabel(month)}</span>
           <Link
-            href={`/calendar?month=${formatMonthParam(addMonths(month, 1))}`}
-            className={buttonClassName("ghost", "sm")}
+            href={`/calendar?day=${day ?? today}`}
+            className={day ? TOGGLE_ACTIVE : buttonClassName("ghost", "sm")}
           >
-            Next →
+            Day
           </Link>
-          <Link href="/calendar" className={buttonClassName("ghost", "sm")}>
-            Today
-          </Link>
+          <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+          {day ? (
+            <>
+              <Link
+                href={`/calendar?day=${addDays(day, -1)}`}
+                className={buttonClassName("ghost", "sm")}
+              >
+                ← Prev
+              </Link>
+              <span className="px-2 text-sm font-medium">{dayLabel(day)}</span>
+              <Link
+                href={`/calendar?day=${addDays(day, 1)}`}
+                className={buttonClassName("ghost", "sm")}
+              >
+                Next →
+              </Link>
+              <Link href={`/calendar?day=${today}`} className={buttonClassName("ghost", "sm")}>
+                Today
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href={`/calendar?month=${formatMonthParam(addMonths(month, -1))}`}
+                className={buttonClassName("ghost", "sm")}
+              >
+                ← Prev
+              </Link>
+              <span className="px-2 text-sm font-medium">{monthLabel(month)}</span>
+              <Link
+                href={`/calendar?month=${formatMonthParam(addMonths(month, 1))}`}
+                className={buttonClassName("ghost", "sm")}
+              >
+                Next →
+              </Link>
+              <Link href="/calendar" className={buttonClassName("ghost", "sm")}>
+                Today
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -96,6 +144,48 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         </form>
       )}
 
+      {day ? (
+        <div className="flex flex-col gap-4">
+          <Card className="p-0">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="text-sm font-semibold">{day === today ? "Open" : "Due"}</h2>
+              <span className="text-xs text-faint">{openForDay.length} open</span>
+            </div>
+            {openForDay.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-muted">
+                {day === today ? "No open to-dos." : "Nothing due on this day."}
+              </p>
+            ) : (
+              <div className="divide-y divide-border px-4">
+                {openForDay.map((todo) => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    overdue={!!todo.dueDate && todo.dueDate < today}
+                    toggleTodo={toggleTodo}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-0">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="text-sm font-semibold">Completed</h2>
+              <span className="text-xs text-faint">{completedOnDay.length} done</span>
+            </div>
+            {completedOnDay.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-muted">Nothing completed on this day.</p>
+            ) : (
+              <div className="divide-y divide-border px-4">
+                {completedOnDay.map((todo) => (
+                  <TodoItem key={todo.id} todo={todo} overdue={false} toggleTodo={toggleTodo} />
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      ) : (
       <Card className="overflow-hidden p-0">
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((day) => (
@@ -118,17 +208,25 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
             return (
               <div key={date} className="min-h-24 bg-surface p-1.5">
                 {date === today ? (
-                  <span className="inline-flex size-5 items-center justify-center rounded-full bg-accent-soft text-xs font-medium text-accent-soft-fg">
+                  <Link
+                    href={`/calendar?day=${date}`}
+                    aria-label={dayLabel(date)}
+                    className="inline-flex size-5 items-center justify-center rounded-full bg-accent-soft text-xs font-medium text-accent-soft-fg"
+                  >
                     {dayNumber}
-                  </span>
+                  </Link>
                 ) : (
-                  <span
+                  <Link
+                    href={`/calendar?day=${date}`}
+                    aria-label={dayLabel(date)}
                     className={
-                      date.startsWith(monthPrefix) ? "text-xs text-muted" : "text-xs text-faint"
+                      date.startsWith(monthPrefix)
+                        ? "text-xs text-muted hover:underline"
+                        : "text-xs text-faint hover:underline"
                     }
                   >
                     {dayNumber}
-                  </span>
+                  </Link>
                 )}
 
                 {(visibleCompleted.length > 0 || visibleOpen.length > 0) && (
@@ -158,6 +256,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
           })}
         </div>
       </Card>
+      )}
     </div>
   );
 }
