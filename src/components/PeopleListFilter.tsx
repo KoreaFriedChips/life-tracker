@@ -5,21 +5,11 @@ import Link from "next/link";
 import type { PersonWithStaleness } from "@/db/repo/people";
 import { distinctTags, filterPeopleBySelectedTags, filterPeopleByQuery } from "@/lib/peopleSearch";
 import TagList from "./TagList";
-import Badge, { type BadgeTone } from "@/components/ui/Badge";
+import { stalenessLabel, stalenessTone } from "@/components/staleness";
+import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import { Input } from "@/components/ui/fields";
 import { buttonClassName } from "@/components/ui/Button";
-
-/** ≤30 days: green. 31-90 days: amber. >90 days or never contacted: red. */
-function stalenessTone(daysSinceContact: number | null): BadgeTone {
-  if (daysSinceContact !== null && daysSinceContact <= 30) return "success";
-  if (daysSinceContact !== null && daysSinceContact <= 90) return "warning";
-  return "danger";
-}
-
-function stalenessLabel(daysSinceContact: number | null): string {
-  return daysSinceContact === null ? "never" : `last talked: ${daysSinceContact} days ago`;
-}
 
 /**
  * Renders the people list with a client-side name/tag filter: a text query

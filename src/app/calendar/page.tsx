@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDb } from "@/db/client";
+import { listPeople } from "@/db/repo/people";
 import { listCategories, listTodos, type Todo } from "@/db/repo/todos";
+import { birthdayOn } from "@/lib/birthdays";
 import {
   addDays,
   addMonths,
@@ -18,6 +20,7 @@ import {
 import { getViewerTimeZone } from "@/lib/timezone";
 import CalendarTodoItem from "@/components/CalendarTodoItem";
 import TodoItem from "@/components/TodoItem";
+import Badge from "@/components/ui/Badge";
 import { Button, buttonClassName } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { Input, Select } from "@/components/ui/fields";
@@ -43,6 +46,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   const db = await getDb();
   const categories = await listCategories(db);
   const todos = await listTodos(db);
+  const peopleWithBirthdays = (await listPeople(db)).filter((p) => p.birthday !== null);
   const today = localToday(tz);
 
   const completedByDay = new Map<string, Todo[]>();
@@ -61,6 +65,25 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   const completedOnDay = day ? (completedByDay.get(day) ?? []) : [];
   const openForDay =
     day === null ? [] : day === today ? openTodos : openTodos.filter((todo) => todo.dueDate === day);
+
+  const gridDates = monthGridDates(month);
+  const birthdaysByDay = new Map<string, { id: number; name: string }[]>();
+  for (const date of gridDates) {
+    for (const person of peopleWithBirthdays) {
+      if (!birthdayOn(person.birthday!, date)) continue;
+      const list = birthdaysByDay.get(date) ?? [];
+      list.push({ id: person.id, name: person.name });
+      birthdaysByDay.set(date, list);
+    }
+  }
+
+  const birthdaysOnDay =
+    day === null
+      ? []
+      : peopleWithBirthdays.flatMap((person) => {
+          const match = birthdayOn(person.birthday!, day);
+          return match ? [{ id: person.id, name: person.name, turningAge: match.turningAge }] : [];
+        });
 
   const monthPrefix = formatMonthParam(month);
 
@@ -148,6 +171,27 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
 
       {day ? (
         <div className="flex flex-col gap-4">
+          {birthdaysOnDay.length > 0 && (
+            <Card className="p-0">
+              <h2 className="border-b border-border px-4 py-3 text-sm font-semibold">Birthdays</h2>
+              <div className="divide-y divide-border">
+                {birthdaysOnDay.map((birthday) => (
+                  <div key={birthday.id} className="flex items-center gap-2 px-4 py-3">
+                    <Link
+                      href={`/people/${birthday.id}`}
+                      className="text-sm font-medium transition-colors hover:text-accent"
+                    >
+                      {birthday.name}
+                    </Link>
+                    {birthday.turningAge != null && (
+                      <Badge tone="accent">turns {birthday.turningAge}</Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
           <Card className="p-0">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold">{day === today ? "Open" : "Due"}</h2>
@@ -198,7 +242,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         </div>
 
         <div className="grid grid-cols-7 gap-px bg-border">
-          {monthGridDates(month).map((date) => {
+          {gridDates.map((date) => {
+            const birthdays = birthdaysByDay.get(date) ?? [];
             const completed = completedByDay.get(date) ?? [];
             const open = date === today ? openTodos : [];
             const visibleCompleted = completed.slice(0, MAX_CELL_ENTRIES);
@@ -231,8 +276,17 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
                   </Link>
                 )}
 
-                {(visibleCompleted.length > 0 || visibleOpen.length > 0) && (
+                {(birthdays.length > 0 || visibleCompleted.length > 0 || visibleOpen.length > 0) && (
                   <div className="mt-1 flex flex-col gap-0.5">
+                    {birthdays.map((birthday) => (
+                      <Link
+                        key={`birthday-${birthday.id}`}
+                        href={`/people/${birthday.id}`}
+                        className="block truncate rounded-full bg-accent-soft px-1.5 py-0.5 text-xs text-accent-soft-fg hover:bg-accent-soft/80"
+                      >
+                        {birthday.name}
+                      </Link>
+                    ))}
                     {visibleCompleted.map((todo) => (
                       <CalendarTodoItem
                         key={todo.id}

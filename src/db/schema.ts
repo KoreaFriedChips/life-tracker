@@ -49,6 +49,8 @@ export const people = sqliteTable("people", {
   relationshipTags: text("relationship_tags").notNull().default("[]"),
   howWeMet: text("how_we_met").notNull().default(""),
   notes: text("notes").notNull().default(""),
+  /** "YYYY-MM-DD", or "--MM-DD" when the year is unknown; validated app-side. */
+  birthday: text("birthday"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });

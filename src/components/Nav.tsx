@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
+import CommandPalette from "@/components/CommandPalette";
 
 const NAV_LINKS = [
+  { href: "/", label: "Today" },
   { href: "/todos", label: "To-dos" },
   { href: "/calendar", label: "Calendar" },
   { href: "/people", label: "People" },
@@ -18,12 +20,14 @@ export default function Nav() {
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
       <nav className="mx-auto flex max-w-3xl items-center gap-6 px-4 py-2.5">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
+        <Link href="/" className="shrink-0 text-sm font-semibold tracking-tight">
           Life Tracker
         </Link>
-        <ul className="flex gap-1">
+        {/* min-w-0 + overflow lets the link list shrink and scroll on narrow
+            viewports so the Search trigger and Log out stay on-screen. */}
+        <ul className="flex min-w-0 gap-1 overflow-x-auto">
           {NAV_LINKS.map(({ href, label }) => {
-            const active = pathname === href || pathname.startsWith(`${href}/`);
+            const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
             return (
               <li key={href}>
                 <Link
@@ -40,14 +44,17 @@ export default function Nav() {
             );
           })}
         </ul>
-        <form action={logout} className="ml-auto">
-          <button
-            type="submit"
-            className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
-          >
-            Log out
-          </button>
-        </form>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <CommandPalette />
+          <form action={logout}>
+            <button
+              type="submit"
+              className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
+            >
+              Log out
+            </button>
+          </form>
+        </div>
       </nav>
     </header>
   );

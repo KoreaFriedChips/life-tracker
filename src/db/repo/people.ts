@@ -1,4 +1,5 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, isNotNull, sql } from "drizzle-orm";
+import { nextOccurrence } from "@/lib/birthdays";
 import { daysSince } from "@/lib/dates";
 import type { AppDatabase } from "../client";
 import { people, touchpoints } from "../schema";
@@ -9,6 +10,8 @@ export interface Person {
   relationshipTags: string[];
   howWeMet: string;
   notes: string;
+  /** "YYYY-MM-DD", or "--MM-DD" when the year is unknown. */
+  birthday: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +21,7 @@ export interface NewPerson {
   relationshipTags?: string[];
   howWeMet?: string;
   notes?: string;
+  birthday?: string | null;
 }
 
 export interface UpdatePersonInput {
@@ -25,6 +29,8 @@ export interface UpdatePersonInput {
   relationshipTags?: string[];
   howWeMet?: string;
   notes?: string;
+  /** Null clears the birthday. */
+  birthday?: string | null;
 }
 
 export interface Touchpoint {
@@ -53,6 +59,7 @@ function toPerson(row: typeof people.$inferSelect): Person {
     relationshipTags: JSON.parse(row.relationshipTags),
     howWeMet: row.howWeMet,
     notes: row.notes,
+    birthday: row.birthday,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -77,6 +84,7 @@ export async function createPerson(db: AppDatabase, input: NewPerson): Promise<P
       relationshipTags: JSON.stringify(input.relationshipTags ?? []),
       howWeMet: input.howWeMet ?? "",
       notes: input.notes ?? "",
+      birthday: input.birthday ?? null,
     })
     .returning()
     .all();
@@ -97,6 +105,7 @@ export async function updatePerson(
         : {}),
       ...(input.howWeMet !== undefined ? { howWeMet: input.howWeMet } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
+      ...(input.birthday !== undefined ? { birthday: input.birthday } : {}),
       updatedAt: sql`(datetime('now'))`,
     })
     .where(eq(people.id, id))
@@ -155,6 +164,7 @@ export async function listPeopleWithStaleness(
       relationshipTags: people.relationshipTags,
       howWeMet: people.howWeMet,
       notes: people.notes,
+      birthday: people.birthday,
       createdAt: people.createdAt,
       updatedAt: people.updatedAt,
       lastTouchpointDate: sql<string | null>`MAX(${touchpoints.date})`,
@@ -171,6 +181,7 @@ export async function listPeopleWithStaleness(
       relationshipTags: JSON.parse(row.relationshipTags) as string[],
       howWeMet: row.howWeMet,
       notes: row.notes,
+      birthday: row.birthday,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       lastTouchpointDate: row.lastTouchpointDate,
@@ -182,4 +193,47 @@ export async function listPeopleWithStaleness(
       if (b.lastTouchpointDate === null) return 1;
       return a.lastTouchpointDate < b.lastTouchpointDate ? -1 : a.lastTouchpointDate > b.lastTouchpointDate ? 1 : 0;
     });
+}
+
+// --- Birthdays ---
+
+export interface UpcomingBirthday {
+  id: number;
+  name: string;
+  birthday: string;
+  daysUntil: number;
+  turningAge: number | null;
+}
+
+/**
+ * People whose next birthday celebration falls within `windowDays` of
+ * `todayISO`, inclusive on both ends (daysUntil 0 = today). Sorted by
+ * daysUntil, then name.
+ */
+export async function upcomingBirthdays(
+  db: AppDatabase,
+  todayISO: string,
+  windowDays: number,
+): Promise<UpcomingBirthday[]> {
+  const rows = await db
+    .select({ id: people.id, name: people.name, birthday: people.birthday })
+    .from(people)
+    .where(isNotNull(people.birthday))
+    .all();
+
+  return rows
+    .flatMap((row) => {
+      const occurrence = nextOccurrence(row.birthday!, todayISO);
+      if (!occurrence || occurrence.daysUntil > windowDays) return [];
+      return [
+        {
+          id: row.id,
+          name: row.name,
+          birthday: row.birthday!,
+          daysUntil: occurrence.daysUntil,
+          turningAge: occurrence.turningAge,
+        },
+      ];
+    })
+    .sort((a, b) => a.daysUntil - b.daysUntil || a.name.localeCompare(b.name));
 }

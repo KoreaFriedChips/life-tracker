@@ -18,5 +18,9 @@ export default async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Installer-fetched URLs (manifest is requested credential-less; icons back it and apple-touch-icon)
+  // must never 302 to /login. `icons/` is start-anchored, exempting only /icons/*.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|icons/).*)",
+  ],
 };
