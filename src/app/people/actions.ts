@@ -10,8 +10,16 @@ import {
   deleteTouchpoint,
   updatePerson,
 } from "@/db/repo/people";
+import { parseBirthday } from "@/lib/birthdays";
 
 const PEOPLE_PATH = "/people";
+const BIRTHDAY_ERROR = "Birthday must be YYYY-MM-DD or --MM-DD.";
+
+/** Trimmed birthday value, or null when the field is empty (= no birthday). */
+function readBirthday(formData: FormData): string | null {
+  const raw = String(formData.get("birthday") ?? "").trim();
+  return raw === "" ? null : raw;
+}
 
 function requireNumber(formData: FormData, key: string): number {
   const value = Number(formData.get(key));
@@ -31,11 +39,18 @@ export async function createPersonAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
+  const birthday = readBirthday(formData);
+  if (birthday !== null && !parseBirthday(birthday)) {
+    revalidatePath(PEOPLE_PATH);
+    redirect(`${PEOPLE_PATH}/new?error=${encodeURIComponent(BIRTHDAY_ERROR)}`);
+  }
+
   const person = await createPerson(await getDb(), {
     name,
     relationshipTags: parseTags(formData),
     howWeMet: String(formData.get("howWeMet") ?? "").trim(),
     notes: String(formData.get("notes") ?? "").trim(),
+    birthday,
   });
 
   revalidatePath(PEOPLE_PATH);
@@ -48,11 +63,18 @@ export async function updatePersonAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
+  const birthday = readBirthday(formData);
+  if (birthday !== null && !parseBirthday(birthday)) {
+    revalidatePath(`${PEOPLE_PATH}/${id}`);
+    redirect(`${PEOPLE_PATH}/${id}/edit?error=${encodeURIComponent(BIRTHDAY_ERROR)}`);
+  }
+
   await updatePerson(await getDb(), id, {
     name,
     relationshipTags: parseTags(formData),
     howWeMet: String(formData.get("howWeMet") ?? "").trim(),
     notes: String(formData.get("notes") ?? "").trim(),
+    birthday,
   });
 
   revalidatePath(PEOPLE_PATH);

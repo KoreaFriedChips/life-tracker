@@ -14,9 +14,14 @@ export async function generateMetadata({
   return { title: person ? `Edit ${person.name}` : "Person not found" };
 }
 
-export default async function EditPersonPage({ params }: PageProps<"/people/[id]/edit">) {
+export default async function EditPersonPage({
+  params,
+  searchParams,
+}: PageProps<"/people/[id]/edit">) {
   const { id: idParam } = await params;
   const id = Number(idParam);
+  const { error: errorParam } = await searchParams;
+  const error = typeof errorParam === "string" ? errorParam : null;
 
   const person = Number.isFinite(id) ? await getPerson(await getDb(), id) : null;
   if (!person) notFound();
@@ -24,6 +29,13 @@ export default async function EditPersonPage({ params }: PageProps<"/people/[id]
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Edit {person.name}</h1>
+
+      {error && (
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger-soft-fg">
+          {error}
+        </div>
+      )}
+
       <PersonForm person={person} action={updatePersonAction} />
     </div>
   );

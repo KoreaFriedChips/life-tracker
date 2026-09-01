@@ -10,6 +10,7 @@ import {
   getPerson,
   listPeopleWithStaleness,
   listTouchpoints,
+  upcomingBirthdays,
   updatePerson,
 } from "@/db/repo/people";
 
@@ -53,6 +54,32 @@ describe("people repo", () => {
     expect(created.relationshipTags).toEqual([]);
     expect(created.howWeMet).toBe("");
     expect(created.notes).toBe("");
+  });
+
+  it("defaults birthday to null when omitted", async () => {
+    const created = await createPerson(db, { name: "No Birthday" });
+    expect(created.birthday).toBeNull();
+  });
+
+  it("round-trips birthdays in both formats", async () => {
+    const withYear = await createPerson(db, { name: "With Year", birthday: "1998-03-14" });
+    expect((await getPerson(db, withYear.id))!.birthday).toBe("1998-03-14");
+
+    const noYear = await createPerson(db, { name: "No Year", birthday: "--03-14" });
+    expect((await getPerson(db, noYear.id))!.birthday).toBe("--03-14");
+  });
+
+  it("updates a birthday and clears it with null", async () => {
+    const created = await createPerson(db, { name: "Birthday Person" });
+
+    const set = await updatePerson(db, created.id, { birthday: "--06-01" });
+    expect(set.birthday).toBe("--06-01");
+
+    const untouched = await updatePerson(db, created.id, { name: "Renamed" });
+    expect(untouched.birthday).toBe("--06-01");
+
+    const cleared = await updatePerson(db, created.id, { birthday: null });
+    expect(cleared.birthday).toBeNull();
   });
 
   it("updates a person and bumps updatedAt", async () => {
@@ -119,5 +146,42 @@ describe("people repo", () => {
     const recent = results.find((p) => p.id === recentContact.id)!;
     expect(recent.lastTouchpointDate).toBe(daysAgo(2));
     expect(recent.daysSinceContact).toBe(2);
+  });
+
+  describe("upcomingBirthdays", () => {
+    const today = "2026-06-15";
+
+    it("keeps the window inclusive and sorts by daysUntil then name", async () => {
+      await createPerson(db, { name: "Zoe Today", birthday: "--06-15" });
+      await createPerson(db, { name: "Cara Edge", birthday: "1990-06-20" });
+      await createPerson(db, { name: "Ben Edge", birthday: "--06-20" });
+      await createPerson(db, { name: "Out Of Window", birthday: "--06-21" });
+      await createPerson(db, { name: "No Birthday" });
+
+      const results = await upcomingBirthdays(db, today, 5);
+
+      expect(results.map((r) => [r.name, r.daysUntil, r.turningAge])).toEqual([
+        ["Zoe Today", 0, null],
+        ["Ben Edge", 5, null],
+        ["Cara Edge", 5, 36],
+      ]);
+      expect(results[0].birthday).toBe("--06-15");
+    });
+
+    it("includes a birthday today even with windowDays 0", async () => {
+      await createPerson(db, { name: "Today Person", birthday: "1998-06-15" });
+      await createPerson(db, { name: "Tomorrow Person", birthday: "--06-16" });
+
+      const results = await upcomingBirthdays(db, today, 0);
+      expect(results.map((r) => r.name)).toEqual(["Today Person"]);
+      expect(results[0].turningAge).toBe(28);
+    });
+
+    it("wraps across the year boundary", async () => {
+      await createPerson(db, { name: "January Person", birthday: "--01-02" });
+
+      const results = await upcomingBirthdays(db, "2026-12-28", 7);
+      expect(results.map((r) => [r.name, r.daysUntil])).toEqual([["January Person", 5]]);
+    });
   });
 });

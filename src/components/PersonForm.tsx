@@ -33,6 +33,16 @@ export default function PersonForm({
           <Input type="text" name="howWeMet" defaultValue={person?.howWeMet} />
         </Field>
 
+        <Field label="Birthday">
+          <Input
+            type="text"
+            name="birthday"
+            placeholder="YYYY-MM-DD, or --MM-DD if year unknown"
+            pattern="\d{4}-\d{2}-\d{2}|--\d{2}-\d{2}"
+            defaultValue={person?.birthday ?? ""}
+          />
+        </Field>
+
         <Field label="Impression notes">
           <Textarea
             name="notes"
