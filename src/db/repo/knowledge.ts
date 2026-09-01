@@ -3,13 +3,14 @@ import type { AppDatabase } from "../client";
 import { causedBy } from "../errors";
 import { connections, knowledgeEntries } from "../schema";
 
-export type KnowledgeType = "book" | "article" | "paper";
-export type KnowledgeStatus = "want_to_read" | "reading" | "finished";
+export type KnowledgeType = "book" | "article" | "paper" | "video";
+export type KnowledgeStatus = "next" | "in_progress" | "completed";
 
 export interface KnowledgeEntry {
   id: number;
   title: string;
   type: KnowledgeType;
+  url: string | null;
   authors: string[];
   status: KnowledgeStatus;
   notes: string;
@@ -21,6 +22,7 @@ export interface KnowledgeEntry {
 export interface NewKnowledgeEntry {
   title: string;
   type: KnowledgeType;
+  url?: string;
   authors?: string[];
   status?: KnowledgeStatus;
   notes?: string;
@@ -30,6 +32,7 @@ export interface NewKnowledgeEntry {
 export interface UpdateKnowledgeEntryInput {
   title?: string;
   type?: KnowledgeType;
+  url?: string | null;
   authors?: string[];
   status?: KnowledgeStatus;
   notes?: string;
@@ -61,6 +64,7 @@ function toKnowledgeEntry(row: typeof knowledgeEntries.$inferSelect): KnowledgeE
     id: row.id,
     title: row.title,
     type: row.type as KnowledgeType,
+    url: row.url,
     authors: JSON.parse(row.authors),
     status: row.status as KnowledgeStatus,
     notes: row.notes,
@@ -90,8 +94,9 @@ export async function createKnowledgeEntry(
     .values({
       title: input.title,
       type: input.type,
+      url: input.url ?? null,
       authors: JSON.stringify(input.authors ?? []),
-      status: input.status ?? "want_to_read",
+      status: input.status ?? "next",
       notes: input.notes ?? "",
       tags: JSON.stringify(input.tags ?? []),
     })
@@ -110,6 +115,7 @@ export async function updateKnowledgeEntry(
     .set({
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.type !== undefined ? { type: input.type } : {}),
+      ...(input.url !== undefined ? { url: input.url } : {}),
       ...(input.authors !== undefined ? { authors: JSON.stringify(input.authors) } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),

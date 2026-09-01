@@ -36,8 +36,9 @@ export async function createEntryAction(formData: FormData) {
   const entry = await createKnowledgeEntry(await getDb(), {
     title,
     type: String(formData.get("type") ?? "book") as KnowledgeType,
+    url: String(formData.get("url") ?? "").trim() || undefined,
     authors: parseList(formData, "authors"),
-    status: String(formData.get("status") ?? "want_to_read") as KnowledgeStatus,
+    status: String(formData.get("status") ?? "next") as KnowledgeStatus,
     notes: String(formData.get("notes") ?? "").trim(),
     tags: parseList(formData, "tags"),
   });
@@ -55,8 +56,9 @@ export async function updateEntryAction(formData: FormData) {
   await updateKnowledgeEntry(await getDb(), id, {
     title,
     type: String(formData.get("type") ?? "book") as KnowledgeType,
+    url: String(formData.get("url") ?? "").trim() || null,
     authors: parseList(formData, "authors"),
-    status: String(formData.get("status") ?? "want_to_read") as KnowledgeStatus,
+    status: String(formData.get("status") ?? "next") as KnowledgeStatus,
     notes: String(formData.get("notes") ?? "").trim(),
     tags: parseList(formData, "tags"),
   });

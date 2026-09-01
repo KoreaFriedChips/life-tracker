@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db/client";
 import { getKnowledgeEntry, listConnectionsForEntry, listKnowledgeEntries } from "@/db/repo/knowledge";
 import Markdown from "@/components/Markdown";
+import { STATUS_LABELS, STATUS_TONES } from "@/components/knowledgeStatus";
 import TagList from "@/components/TagList";
 import DeleteButton from "@/components/DeleteButton";
 import Badge from "@/components/ui/Badge";
@@ -50,7 +51,7 @@ export default async function KnowledgeEntryPage({
           <h1 className="text-2xl font-semibold tracking-tight">{entry.title}</h1>
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="neutral">{entry.type}</Badge>
-            <Badge tone="neutral">{entry.status.replaceAll("_", " ")}</Badge>
+            <Badge tone={STATUS_TONES[entry.status]}>{STATUS_LABELS[entry.status]}</Badge>
             <TagList tags={entry.tags} />
           </div>
         </div>
@@ -67,6 +68,19 @@ export default async function KnowledgeEntryPage({
           </DeleteButton>
         </div>
       </div>
+
+      {entry.url && (
+        <p className="text-sm break-all">
+          <a
+            href={entry.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent hover:underline"
+          >
+            {entry.url}
+          </a>
+        </p>
+      )}
 
       {entry.authors.length > 0 && (
         <p className="text-sm text-muted">

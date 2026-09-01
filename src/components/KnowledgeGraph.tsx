@@ -13,12 +13,14 @@ const TYPE_COLORS: Record<KnowledgeType, string> = {
   book: "#3b82f6",
   article: "#22c55e",
   paper: "#f97316",
+  video: "#ef4444",
 };
 
 const TYPE_LABELS: Record<KnowledgeType, string> = {
   book: "Book",
   article: "Article",
   paper: "Paper",
+  video: "Video",
 };
 
 function GraphLegend() {
