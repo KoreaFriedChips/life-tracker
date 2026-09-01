@@ -146,7 +146,45 @@ describe("knowledge repo", () => {
     expect(graph.nodes.map((n) => n.id).sort((x, y) => x - y)).toEqual(
       [a.id, b.id, unconnected.id].sort((x, y) => x - y),
     );
-    expect(graph.links).toEqual([{ source: a.id, target: b.id, label: "similar concepts" }]);
+    expect(graph.links).toEqual([
+      { id: 1, source: a.id, target: b.id, label: "similar concepts" },
+    ]);
+  });
+
+  it("getGraphData nodes carry status, tags, authors, and the notes as excerpt", async () => {
+    const entry = await createKnowledgeEntry(db, {
+      title: "Thinking in Systems",
+      type: "book",
+      status: "in_progress",
+      tags: ["systems", "modeling"],
+      authors: ["Donella Meadows"],
+      notes: "Stocks and flows.",
+    });
+
+    const graph = await getGraphData(db);
+
+    expect(graph.nodes).toEqual([
+      {
+        id: entry.id,
+        title: "Thinking in Systems",
+        type: "book",
+        status: "in_progress",
+        tags: ["systems", "modeling"],
+        authors: ["Donella Meadows"],
+        notesExcerpt: "Stocks and flows.",
+      },
+    ]);
+  });
+
+  it("getGraphData truncates notes longer than 200 chars to an ellipsized excerpt", async () => {
+    await createKnowledgeEntry(db, { title: "Long", type: "article", notes: "x".repeat(500) });
+    await createKnowledgeEntry(db, { title: "Exact", type: "article", notes: "y".repeat(200) });
+
+    const graph = await getGraphData(db);
+    const byTitle = new Map(graph.nodes.map((n) => [n.title, n]));
+
+    expect(byTitle.get("Long")?.notesExcerpt).toBe("x".repeat(200) + "…");
+    expect(byTitle.get("Exact")?.notesExcerpt).toBe("y".repeat(200));
   });
 
   it("listConnectionsForEntry resolves the other entry's id/title from either side of the pair", async () => {
