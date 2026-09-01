@@ -28,6 +28,20 @@ export function parseMonthParam(value: string | undefined): CalendarMonth | null
   return { year: Number(match[1]), month: Number(match[2]) };
 }
 
+/** Parses a "?day=YYYY-MM-DD" value; null on missing, malformed, or calendar-invalid input (e.g. 2026-02-31). */
+export function parseDayParam(value: string | undefined): string | null {
+  const match = value?.match(/^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/);
+  if (!match) return null;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  return toLocalDateString(new Date(year, month - 1, day)) === value ? value : null;
+}
+
+/** Day arithmetic with month/year rollover (Date-constructor, DST-safe); delta may be negative. */
+export function addDays(dateStr: string, delta: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return toLocalDateString(new Date(year, month - 1, day + delta));
+}
+
 /** The month containing today (local time). */
 export function currentMonth(): CalendarMonth {
   const now = new Date();
@@ -53,6 +67,17 @@ const MONTH_NAMES = [
 /** "August 2026" */
 export function monthLabel(m: CalendarMonth): string {
   return `${MONTH_NAMES[m.month - 1]} ${m.year}`;
+}
+
+const WEEKDAY_NAMES = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+];
+
+/** "Monday, August 31, 2026" */
+export function dayLabel(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const weekday = WEEKDAY_NAMES[new Date(year, month - 1, day).getDay()];
+  return `${weekday}, ${MONTH_NAMES[month - 1]} ${day}, ${year}`;
 }
 
 /**

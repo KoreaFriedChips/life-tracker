@@ -28,7 +28,9 @@ export default function TodoItem({
       />
       <div className="flex-1">
         <div className="flex flex-wrap items-baseline gap-2">
-          <span className="text-sm">{todo.title}</span>
+          <span className={todo.done ? "text-sm text-muted line-through" : "text-sm"}>
+            {todo.title}
+          </span>
           {todo.dueDate && (
             <Badge tone={overdue ? "danger" : "neutral"}>
               {overdue ? `overdue · ${todo.dueDate}` : todo.dueDate}
