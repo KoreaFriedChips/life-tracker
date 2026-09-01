@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getDb } from "@/db/client";
 import { listCategories, listTodos, type Todo } from "@/db/repo/todos";
 import { localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 import TodoItem from "@/components/TodoItem";
 import { Button, buttonClassName } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -26,10 +27,11 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
   const showCompleted = params.showCompleted === "1";
   const error = typeof params.error === "string" ? params.error : null;
 
+  const tz = await getViewerTimeZone();
   const db = await getDb();
   const categories = await listCategories(db);
   const allTodos = await listTodos(db);
-  const today = localToday();
+  const today = localToday(tz);
 
   const openTodosByCategory = new Map<number, Todo[]>();
   for (const todo of allTodos) {

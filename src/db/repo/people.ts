@@ -144,7 +144,10 @@ export async function deleteTouchpoint(db: AppDatabase, id: number): Promise<voi
  * All people with their derived last-touchpoint date and days-since-contact.
  * Sorted longest-since-contact first, with never-contacted people at the very top.
  */
-export async function listPeopleWithStaleness(db: AppDatabase): Promise<PersonWithStaleness[]> {
+export async function listPeopleWithStaleness(
+  db: AppDatabase,
+  tz: string,
+): Promise<PersonWithStaleness[]> {
   const rows = await db
     .select({
       id: people.id,
@@ -171,7 +174,7 @@ export async function listPeopleWithStaleness(db: AppDatabase): Promise<PersonWi
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       lastTouchpointDate: row.lastTouchpointDate,
-      daysSinceContact: row.lastTouchpointDate === null ? null : daysSince(row.lastTouchpointDate),
+      daysSinceContact: row.lastTouchpointDate === null ? null : daysSince(row.lastTouchpointDate, tz),
     }))
     .sort((a, b) => {
       if (a.lastTouchpointDate === null && b.lastTouchpointDate === null) return 0;

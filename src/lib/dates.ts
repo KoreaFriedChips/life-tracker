@@ -5,14 +5,34 @@ function toLocalDateString(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/** Returns today's date as YYYY-MM-DD in the local timezone. */
-export function localToday(): string {
-  return toLocalDateString(new Date());
+/** YYYY-MM-DD of `instant` in the given IANA timezone (en-CA locale formats ISO-style). */
+function dateInZone(instant: Date, tz: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(instant);
 }
 
-/** Local calendar date (YYYY-MM-DD) of a SQLite UTC datetime ("YYYY-MM-DD HH:MM:SS"). */
-export function localDateOf(utcDatetime: string): string {
-  return toLocalDateString(new Date(utcDatetime.replace(" ", "T") + "Z"));
+/** True if `value` names an IANA timezone Intl can resolve. */
+export function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Returns today's date as YYYY-MM-DD in the given IANA timezone. */
+export function localToday(tz: string): string {
+  return dateInZone(new Date(), tz);
+}
+
+/** Calendar date (YYYY-MM-DD) of a SQLite UTC datetime ("YYYY-MM-DD HH:MM:SS") in the given IANA timezone. */
+export function localDateOf(utcDatetime: string, tz: string): string {
+  return dateInZone(new Date(utcDatetime.replace(" ", "T") + "Z"), tz);
 }
 
 export interface CalendarMonth {
@@ -42,10 +62,10 @@ export function addDays(dateStr: string, delta: number): string {
   return toLocalDateString(new Date(year, month - 1, day + delta));
 }
 
-/** The month containing today (local time). */
-export function currentMonth(): CalendarMonth {
-  const now = new Date();
-  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+/** The month containing today in the given IANA timezone. */
+export function currentMonth(tz: string): CalendarMonth {
+  const [year, month] = localToday(tz).split("-").map(Number);
+  return { year, month };
 }
 
 /** Month arithmetic with year rollover; delta may be negative. */
@@ -97,13 +117,13 @@ export function monthGridDates(m: CalendarMonth): string[] {
   );
 }
 
-/** Whole calendar days between `dateStr` (YYYY-MM-DD, local) and today (local). */
-export function daysSince(dateStr: string): number {
+/** Whole calendar days between `dateStr` (YYYY-MM-DD) and today in the given IANA timezone. */
+export function daysSince(dateStr: string, tz: string): number {
   const [year, month, day] = dateStr.split("-").map(Number);
   const then = new Date(year, month - 1, day).getTime();
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const [ty, tm, td] = localToday(tz).split("-").map(Number);
+  const today = new Date(ty, tm - 1, td).getTime();
 
   return Math.round((today - then) / 86_400_000);
 }

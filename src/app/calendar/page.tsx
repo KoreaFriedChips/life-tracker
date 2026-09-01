@@ -15,6 +15,7 @@ import {
   parseDayParam,
   parseMonthParam,
 } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 import CalendarTodoItem from "@/components/CalendarTodoItem";
 import TodoItem from "@/components/TodoItem";
 import { Button, buttonClassName } from "@/components/ui/Button";
@@ -34,19 +35,20 @@ const TOGGLE_ACTIVE =
 
 export default async function CalendarPage({ searchParams }: PageProps<"/calendar">) {
   const params = await searchParams;
+  const tz = await getViewerTimeZone();
   const monthParam = typeof params.month === "string" ? params.month : undefined;
-  const month = parseMonthParam(monthParam) ?? currentMonth();
+  const month = parseMonthParam(monthParam) ?? currentMonth(tz);
   const day = parseDayParam(typeof params.day === "string" ? params.day : undefined);
 
   const db = await getDb();
   const categories = await listCategories(db);
   const todos = await listTodos(db);
-  const today = localToday();
+  const today = localToday(tz);
 
   const completedByDay = new Map<string, Todo[]>();
   for (const todo of todos) {
     if (!todo.done || !todo.completedAt) continue;
-    const day = localDateOf(todo.completedAt);
+    const day = localDateOf(todo.completedAt, tz);
     const list = completedByDay.get(day) ?? [];
     list.push(todo);
     completedByDay.set(day, list);
