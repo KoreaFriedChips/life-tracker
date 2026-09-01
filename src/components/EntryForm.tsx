@@ -1,4 +1,5 @@
 import type { KnowledgeEntry } from "@/db/repo/knowledge";
+import { KNOWLEDGE_STATUSES, STATUS_LABELS } from "@/components/knowledgeStatus";
 import { Button } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { Field, Input, Select, Textarea } from "@/components/ui/fields";
@@ -26,17 +27,29 @@ export default function EntryForm({
               <option value="book">Book</option>
               <option value="article">Article</option>
               <option value="paper">Paper</option>
+              <option value="video">Video</option>
             </Select>
           </Field>
 
           <Field label="Status">
-            <Select name="status" defaultValue={entry?.status ?? "want_to_read"}>
-              <option value="want_to_read">Want to read</option>
-              <option value="reading">Reading</option>
-              <option value="finished">Finished</option>
+            <Select name="status" defaultValue={entry?.status ?? "next"}>
+              {KNOWLEDGE_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {STATUS_LABELS[status]}
+                </option>
+              ))}
             </Select>
           </Field>
         </div>
+
+        <Field label="URL">
+          <Input
+            type="text"
+            name="url"
+            placeholder="https://..."
+            defaultValue={entry?.url ?? undefined}
+          />
+        </Field>
 
         <Field label="Authors">
           <Input

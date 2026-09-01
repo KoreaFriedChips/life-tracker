@@ -3,19 +3,14 @@ import Link from "next/link";
 import { getDb } from "@/db/client";
 import { listKnowledgeEntries } from "@/db/repo/knowledge";
 import TagList from "@/components/TagList";
-import Badge, { type BadgeTone } from "@/components/ui/Badge";
+import { KNOWLEDGE_STATUSES, STATUS_LABELS, STATUS_TONES } from "@/components/knowledgeStatus";
+import Badge from "@/components/ui/Badge";
 import { Button, ButtonLink, buttonClassName } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { Input, Select } from "@/components/ui/fields";
 
 export const metadata: Metadata = {
   title: "Knowledge",
-};
-
-const STATUS_TONES: Record<string, BadgeTone> = {
-  want_to_read: "neutral",
-  reading: "accent",
-  finished: "success",
 };
 
 export default async function KnowledgePage({ searchParams }: PageProps<"/knowledge">) {
@@ -58,13 +53,16 @@ export default async function KnowledgePage({ searchParams }: PageProps<"/knowle
           <option value="book">Book</option>
           <option value="article">Article</option>
           <option value="paper">Paper</option>
+          <option value="video">Video</option>
         </Select>
 
         <Select name="status" defaultValue={statusFilter}>
           <option value="">All statuses</option>
-          <option value="want_to_read">Want to read</option>
-          <option value="reading">Reading</option>
-          <option value="finished">Finished</option>
+          {KNOWLEDGE_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {STATUS_LABELS[status]}
+            </option>
+          ))}
         </Select>
 
         <Input type="text" name="tag" placeholder="Filter by tag..." defaultValue={tagFilter} />
@@ -103,9 +101,7 @@ export default async function KnowledgePage({ searchParams }: PageProps<"/knowle
                   {entry.title}
                 </Link>
                 <Badge tone="neutral">{entry.type}</Badge>
-                <Badge tone={STATUS_TONES[entry.status] ?? "neutral"}>
-                  {entry.status.replaceAll("_", " ")}
-                </Badge>
+                <Badge tone={STATUS_TONES[entry.status]}>{STATUS_LABELS[entry.status]}</Badge>
                 <TagList tags={entry.tags} />
               </div>
             ))}

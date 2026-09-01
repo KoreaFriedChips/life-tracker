@@ -32,12 +32,37 @@ describe("knowledge repo", () => {
     expect(fetched).toEqual(created);
   });
 
+  it("stores video entries with a url", async () => {
+    const created = await createKnowledgeEntry(db, {
+      title: "Attention Is All You Need — explained",
+      type: "video",
+      url: "https://www.youtube.com/watch?v=iDulhoQ2pro",
+    });
+
+    expect(created.type).toBe("video");
+    expect(created.url).toBe("https://www.youtube.com/watch?v=iDulhoQ2pro");
+
+    const fetched = await getKnowledgeEntry(db, created.id);
+    expect(fetched).toEqual(created);
+  });
+
+  it("defaults url to null, sets it on update, and clears it with null", async () => {
+    const created = await createKnowledgeEntry(db, { title: "Some Article", type: "article" });
+    expect(created.url).toBeNull();
+
+    const updated = await updateKnowledgeEntry(db, created.id, { url: "https://example.com/a" });
+    expect(updated.url).toBe("https://example.com/a");
+
+    const cleared = await updateKnowledgeEntry(db, created.id, { url: null });
+    expect(cleared.url).toBeNull();
+  });
+
   it("defaults authors, tags, notes, and status when omitted", async () => {
     const created = await createKnowledgeEntry(db, { title: "Some Paper", type: "paper" });
     expect(created.authors).toEqual([]);
     expect(created.tags).toEqual([]);
     expect(created.notes).toBe("");
-    expect(created.status).toBe("want_to_read");
+    expect(created.status).toBe("next");
   });
 
   it("updates an entry's fields and bumps updatedAt", async () => {
@@ -45,12 +70,12 @@ describe("knowledge repo", () => {
 
     const updated = await updateKnowledgeEntry(db, created.id, {
       title: "Final Title",
-      status: "reading",
+      status: "in_progress",
       tags: ["favorites"],
     });
 
     expect(updated.title).toBe("Final Title");
-    expect(updated.status).toBe("reading");
+    expect(updated.status).toBe("in_progress");
     expect(updated.tags).toEqual(["favorites"]);
     expect(updated.updatedAt >= created.updatedAt).toBe(true);
   });

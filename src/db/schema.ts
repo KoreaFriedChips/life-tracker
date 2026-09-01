@@ -7,18 +7,19 @@ export const knowledgeEntries = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     title: text("title").notNull(),
     type: text("type").notNull(),
+    url: text("url"),
     authors: text("authors").notNull().default("[]"),
-    status: text("status").notNull().default("want_to_read"),
+    status: text("status").notNull().default("next"),
     notes: text("notes").notNull().default(""),
     tags: text("tags").notNull().default("[]"),
     createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
     updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
   },
   (table) => [
-    check("knowledge_entries_type_check", sql`${table.type} IN ('book','article','paper')`),
+    check("knowledge_entries_type_check", sql`${table.type} IN ('book','article','paper','video')`),
     check(
       "knowledge_entries_status_check",
-      sql`${table.status} IN ('want_to_read','reading','finished')`,
+      sql`${table.status} IN ('next','in_progress','completed')`,
     ),
   ],
 );
