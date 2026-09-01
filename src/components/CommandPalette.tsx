@@ -59,6 +59,7 @@ export default function CommandPalette() {
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   function openPalette() {
@@ -98,6 +99,38 @@ export default function CommandPalette() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  // Escape and Tab are handled at the window level while open, so they keep
+  // working when focus leaves the panel (e.g. after clicking a non-interactive
+  // area) and Tab can never reach the page hidden behind the aria-modal overlay.
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.isComposing) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (mode === "search") closePalette();
+        else backToSearch();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      e.preventDefault();
+      const focusables = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea"),
+      ).filter((el) => !el.matches(":disabled"));
+      if (focusables.length === 0) return;
+      const current = focusables.indexOf(document.activeElement as HTMLElement);
+      const next =
+        current === -1
+          ? e.shiftKey
+            ? focusables.length - 1
+            : 0
+          : (current + (e.shiftKey ? -1 : 1) + focusables.length) % focusables.length;
+      focusables[next].focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, mode]);
+
   // Focus the search input on open and when returning from a capture mode.
   useEffect(() => {
     if (open && mode === "search") inputRef.current?.focus();
@@ -114,25 +147,37 @@ export default function CommandPalette() {
   }, [open]);
 
   // Debounced search; previous results stay visible while the next fetch runs.
-  // Server actions dispatch sequentially per client, so responses arrive in order.
+  // `stale` (set by the cleanup on any query/open/mode change) drops in-flight
+  // responses for superseded queries, so a late result can't repopulate a
+  // cleared input or a reopened palette; rejections keep the prior results.
   useEffect(() => {
     if (!open || mode !== "search" || !query.trim()) return;
+    let stale = false;
     const timer = setTimeout(() => {
-      void searchPalette(query).then((next) => {
-        setResults(next);
-        setActive(0);
-      });
+      void searchPalette(query)
+        .then((next) => {
+          if (stale) return;
+          setResults(next);
+          setActive(0);
+        })
+        .catch(() => {});
     }, 200);
-    return () => clearTimeout(timer);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
   }, [query, open, mode]);
 
-  // Load categories once, on first entering todo capture.
+  // Load categories once, on first entering todo capture. On failure categories
+  // stays null, so backing out and re-entering todo capture retries the load.
   useEffect(() => {
     if (!open || mode !== "todo" || categories) return;
-    void getCaptureCategories().then((list) => {
-      setCategories(list);
-      setCategoryId((current) => current ?? list[0]?.id ?? null);
-    });
+    void getCaptureCategories()
+      .then((list) => {
+        setCategories(list);
+        setCategoryId((current) => current ?? list[0]?.id ?? null);
+      })
+      .catch(() => setError("Couldn't load categories. Go back and retry."));
   }, [open, mode, categories]);
 
   // Keep the active option visible when arrowing through a scrolled list.
@@ -175,28 +220,46 @@ export default function CommandPalette() {
     }
   }
 
+  // Each submit resets `pending` in a finally: a transport-level rejection
+  // (offline, dropped connection) would otherwise leave every capture submit
+  // disabled for the rest of the session, since nothing else resets it.
   async function submitTodo(e: FormEvent) {
     e.preventDefault();
     if (pending || categoryId === null) return;
     setPending(true);
-    finishCapture(await createPaletteTodo({ title, categoryId }));
-    setPending(false);
+    try {
+      finishCapture(await createPaletteTodo({ title, categoryId }));
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   async function submitKnowledge(e: FormEvent) {
     e.preventDefault();
     if (pending) return;
     setPending(true);
-    finishCapture(await createPaletteKnowledge({ title, type: knowledgeType }));
-    setPending(false);
+    try {
+      finishCapture(await createPaletteKnowledge({ title, type: knowledgeType }));
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   async function submitTouchpoint(e: FormEvent) {
     e.preventDefault();
     if (pending || !pinned) return;
     setPending(true);
-    finishCapture(await createPaletteTouchpoint({ personId: pinned.id, summary }));
-    setPending(false);
+    try {
+      finishCapture(await createPaletteTouchpoint({ personId: pinned.id, summary }));
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   const q = query.trim();
@@ -261,14 +324,13 @@ export default function CommandPalette() {
     results.people.length === 0 &&
     results.knowledge.length === 0;
 
+  // Escape is handled by the window-level listener above. List navigation only
+  // reacts to keys from the search input or the panel itself (focused by
+  // padding clicks): Enter on a focused control (e.g. "Log touchpoint") must
+  // keep its native activation, and Enter committing IME text must not run a row.
   function onPanelKeyDown(e: ReactKeyboardEvent) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      if (mode === "search") closePalette();
-      else backToSearch();
-      return;
-    }
-    if (mode !== "search") return;
+    if (mode !== "search" || e.nativeEvent.isComposing) return;
+    if (e.target !== inputRef.current && e.target !== e.currentTarget) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActive((a) => (a + 1) % rows.length);
@@ -305,10 +367,14 @@ export default function CommandPalette() {
             onClick={closePalette}
           >
             <div
+              ref={panelRef}
               role="dialog"
               aria-modal="true"
               aria-label="Command palette"
-              className="mt-24 w-full max-w-lg rounded-xl border border-border bg-surface shadow-xs"
+              // Clicks on non-interactive areas keep focus inside the dialog,
+              // so key handling stays alive and aria-modal stays honest.
+              tabIndex={-1}
+              className="mt-24 w-full max-w-lg rounded-xl border border-border bg-surface shadow-xs outline-none"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={onPanelKeyDown}
             >
@@ -376,33 +442,63 @@ export default function CommandPalette() {
                       autoFocus
                     />
                   </Field>
-                  <Field label="Category">
-                    {categories ? (
-                      <Select
-                        value={categoryId ?? ""}
-                        onChange={(e) => setCategoryId(Number(e.target.value))}
-                      >
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </Select>
-                    ) : (
-                      <Select disabled>
-                        <option>Loading…</option>
-                      </Select>
-                    )}
-                  </Field>
-                  {errorBox}
-                  <div className="flex gap-2">
-                    <Button type="submit" disabled={pending || !title.trim() || categoryId === null}>
-                      Add to-do
-                    </Button>
-                    <Button type="button" variant="ghost" onClick={backToSearch}>
-                      Back
-                    </Button>
-                  </div>
+                  {categories && categories.length === 0 ? (
+                    <>
+                      <p className="text-sm text-muted">
+                        No categories yet — create one on the To-dos page.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            // Drop the cached empty list so reopening refetches
+                            // after a category is created; go() also closes the
+                            // palette, which a plain link would leave open.
+                            setCategories(null);
+                            go("/todos#manage-categories");
+                          }}
+                        >
+                          Go to To-dos
+                        </Button>
+                        <Button type="button" variant="ghost" onClick={backToSearch}>
+                          Back
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Field label="Category">
+                        {categories ? (
+                          <Select
+                            value={categoryId ?? ""}
+                            onChange={(e) => setCategoryId(Number(e.target.value))}
+                          >
+                            {categories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </Select>
+                        ) : (
+                          <Select disabled>
+                            <option>Loading…</option>
+                          </Select>
+                        )}
+                      </Field>
+                      {errorBox}
+                      <div className="flex gap-2">
+                        <Button
+                          type="submit"
+                          disabled={pending || !title.trim() || categoryId === null}
+                        >
+                          Add to-do
+                        </Button>
+                        <Button type="button" variant="ghost" onClick={backToSearch}>
+                          Back
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </form>
               )}
               {mode === "touchpoint" && pinned && (

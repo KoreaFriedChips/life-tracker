@@ -3,6 +3,7 @@ import {
   birthdayOn,
   daysUntilLabel,
   formatBirthday,
+  isFutureBirthday,
   nextOccurrence,
   parseBirthday,
 } from "@/lib/birthdays";
@@ -142,6 +143,26 @@ describe("birthdayOn", () => {
 
   it("returns null for unparseable birthdays", () => {
     expect(birthdayOn("junk", "2026-03-14")).toBeNull();
+  });
+});
+
+describe("isFutureBirthday", () => {
+  it("flags a full date after today", () => {
+    expect(isFutureBirthday("2062-03-14", "2026-08-31")).toBe(true);
+    expect(isFutureBirthday("2026-09-01", "2026-08-31")).toBe(true);
+  });
+
+  it("accepts today and past dates", () => {
+    expect(isFutureBirthday("2026-08-31", "2026-08-31")).toBe(false);
+    expect(isFutureBirthday("1962-03-14", "2026-08-31")).toBe(false);
+  });
+
+  it("never flags no-year birthdays, even later in the year", () => {
+    expect(isFutureBirthday("--12-31", "2026-08-31")).toBe(false);
+  });
+
+  it("never flags unparseable input", () => {
+    expect(isFutureBirthday("2062-02-30", "2026-08-31")).toBe(false);
   });
 });
 

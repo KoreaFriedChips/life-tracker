@@ -59,8 +59,10 @@ export async function createPaletteTodo(input: {
   const title = input.title.trim();
   if (!title) return { ok: false, error: "Title is required." };
   if (!Number.isFinite(input.categoryId)) return { ok: false, error: "Pick a category." };
+  // Outside the try: getDb's auth redirect must propagate, not become a capture error.
+  const db = await getDb();
   try {
-    await createTodo(await getDb(), { title, categoryId: input.categoryId });
+    await createTodo(db, { title, categoryId: input.categoryId });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not add to-do." };
   }
@@ -78,8 +80,10 @@ export async function createPaletteKnowledge(input: {
   const title = input.title.trim();
   if (!title) return { ok: false, error: "Title is required." };
   const type = KNOWLEDGE_TYPES.find((t) => t === input.type) ?? "book";
+  // Outside the try: getDb's auth redirect must propagate, not become a capture error.
+  const db = await getDb();
   try {
-    await createKnowledgeEntry(await getDb(), { title, type });
+    await createKnowledgeEntry(db, { title, type });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not add entry." };
   }
@@ -97,8 +101,10 @@ export async function createPaletteTouchpoint(input: {
   if (!summary) return { ok: false, error: "Summary is required." };
   if (!Number.isFinite(input.personId)) return { ok: false, error: "Pick a person." };
   const date = localToday(await getViewerTimeZone());
+  // Outside the try: getDb's auth redirect must propagate, not become a capture error.
+  const db = await getDb();
   try {
-    await addTouchpoint(await getDb(), { personId: input.personId, date, summary });
+    await addTouchpoint(db, { personId: input.personId, date, summary });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not log touchpoint." };
   }

@@ -10,15 +10,28 @@ import {
   deleteTouchpoint,
   updatePerson,
 } from "@/db/repo/people";
-import { parseBirthday } from "@/lib/birthdays";
+import { isFutureBirthday, parseBirthday } from "@/lib/birthdays";
+import { localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 
 const PEOPLE_PATH = "/people";
 const BIRTHDAY_ERROR = "Birthday must be YYYY-MM-DD or --MM-DD.";
+const FUTURE_BIRTHDAY_ERROR = "Birthday can't be in the future.";
 
 /** Trimmed birthday value, or null when the field is empty (= no birthday). */
 function readBirthday(formData: FormData): string | null {
   const raw = String(formData.get("birthday") ?? "").trim();
   return raw === "" ? null : raw;
+}
+
+/** Error message for a non-empty birthday input, or null when storable. */
+async function birthdayInputError(birthday: string | null): Promise<string | null> {
+  if (birthday === null) return null;
+  if (!parseBirthday(birthday)) return BIRTHDAY_ERROR;
+  if (isFutureBirthday(birthday, localToday(await getViewerTimeZone()))) {
+    return FUTURE_BIRTHDAY_ERROR;
+  }
+  return null;
 }
 
 function requireNumber(formData: FormData, key: string): number {
@@ -40,9 +53,10 @@ export async function createPersonAction(formData: FormData) {
   if (!name) return;
 
   const birthday = readBirthday(formData);
-  if (birthday !== null && !parseBirthday(birthday)) {
+  const birthdayError = await birthdayInputError(birthday);
+  if (birthdayError !== null) {
     revalidatePath(PEOPLE_PATH);
-    redirect(`${PEOPLE_PATH}/new?error=${encodeURIComponent(BIRTHDAY_ERROR)}`);
+    redirect(`${PEOPLE_PATH}/new?error=${encodeURIComponent(birthdayError)}`);
   }
 
   const person = await createPerson(await getDb(), {
@@ -64,9 +78,10 @@ export async function updatePersonAction(formData: FormData) {
   if (!name) return;
 
   const birthday = readBirthday(formData);
-  if (birthday !== null && !parseBirthday(birthday)) {
+  const birthdayError = await birthdayInputError(birthday);
+  if (birthdayError !== null) {
     revalidatePath(`${PEOPLE_PATH}/${id}`);
-    redirect(`${PEOPLE_PATH}/${id}/edit?error=${encodeURIComponent(BIRTHDAY_ERROR)}`);
+    redirect(`${PEOPLE_PATH}/${id}/edit?error=${encodeURIComponent(birthdayError)}`);
   }
 
   await updatePerson(await getDb(), id, {

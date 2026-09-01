@@ -38,6 +38,16 @@ export function parseBirthday(value: string): ParsedBirthday | null {
   return { year, month, day };
 }
 
+/**
+ * True when `birthday` is a full date after `todayISO` (a year typo like 2062
+ * for 1962). No-year birthdays are never future; unparseable input is not
+ * flagged. Both strings are zero-padded ISO, so string order is date order.
+ */
+export function isFutureBirthday(birthday: string, todayISO: string): boolean {
+  const parsed = parseBirthday(birthday);
+  return parsed !== null && parsed.year !== null && birthday > todayISO;
+}
+
 /** "March 14, 1998" for full dates, "March 14" when the year is unknown; unparseable values pass through. */
 export function formatBirthday(birthday: string): string {
   const parsed = parseBirthday(birthday);

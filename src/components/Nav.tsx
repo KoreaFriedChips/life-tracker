@@ -20,10 +20,12 @@ export default function Nav() {
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
       <nav className="mx-auto flex max-w-3xl items-center gap-6 px-4 py-2.5">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
+        <Link href="/" className="shrink-0 text-sm font-semibold tracking-tight">
           Life Tracker
         </Link>
-        <ul className="flex gap-1">
+        {/* min-w-0 + overflow lets the link list shrink and scroll on narrow
+            viewports so the Search trigger and Log out stay on-screen. */}
+        <ul className="flex min-w-0 gap-1 overflow-x-auto">
           {NAV_LINKS.map(({ href, label }) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
             return (
@@ -42,7 +44,7 @@ export default function Nav() {
             );
           })}
         </ul>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <CommandPalette />
           <form action={logout}>
             <button
