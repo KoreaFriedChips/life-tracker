@@ -103,7 +103,7 @@ describe("people repo", () => {
 
     await addTouchpoint(db, { personId: recentContact.id, date: daysAgo(2), summary: "just talked" });
 
-    const results = await listPeopleWithStaleness(db);
+    const results = await listPeopleWithStaleness(db, Intl.DateTimeFormat().resolvedOptions().timeZone);
     const order = results.map((p) => p.name);
 
     expect(order).toEqual(["Never Contacted", "Stale Contact", "Recent Contact"]);

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db/client";
 import { getPerson, listTouchpoints } from "@/db/repo/people";
 import { localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 import Markdown from "@/components/Markdown";
 import TagList from "@/components/TagList";
 import DeleteButton from "@/components/DeleteButton";
@@ -22,12 +23,13 @@ export default async function PersonPage({ params }: PageProps<"/people/[id]">) 
   const { id: idParam } = await params;
   const id = Number(idParam);
 
+  const tz = await getViewerTimeZone();
   const db = await getDb();
   const person = Number.isFinite(id) ? await getPerson(db, id) : null;
   if (!person) notFound();
 
   const touchpoints = await listTouchpoints(db, id);
-  const today = localToday();
+  const today = localToday(tz);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">

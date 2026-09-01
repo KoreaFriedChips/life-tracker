@@ -1,12 +1,14 @@
 process.env.TZ = "America/New_York";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   addDays,
   addMonths,
   currentMonth,
   dayLabel,
+  daysSince,
   formatMonthParam,
+  isValidTimeZone,
   localDateOf,
   localToday,
   monthGridDates,
@@ -17,21 +19,26 @@ import {
 
 describe("localDateOf", () => {
   it("maps a midday UTC datetime to the same local day", () => {
-    expect(localDateOf("2026-08-15 16:00:00")).toBe("2026-08-15");
+    expect(localDateOf("2026-08-15 16:00:00", "America/New_York")).toBe("2026-08-15");
   });
 
   it("maps a late-evening local completion stored as next-day UTC back to the local day", () => {
-    expect(localDateOf("2026-08-20 02:30:00")).toBe("2026-08-19");
+    expect(localDateOf("2026-08-20 02:30:00", "America/New_York")).toBe("2026-08-19");
   });
 
   it("rolls over at exactly 04:00 UTC during EDT (UTC-4)", () => {
-    expect(localDateOf("2026-08-15 03:59:59")).toBe("2026-08-14");
-    expect(localDateOf("2026-08-15 04:00:00")).toBe("2026-08-15");
+    expect(localDateOf("2026-08-15 03:59:59", "America/New_York")).toBe("2026-08-14");
+    expect(localDateOf("2026-08-15 04:00:00", "America/New_York")).toBe("2026-08-15");
   });
 
   it("rolls over at exactly 05:00 UTC during EST (UTC-5)", () => {
-    expect(localDateOf("2026-01-15 04:59:59")).toBe("2026-01-14");
-    expect(localDateOf("2026-01-15 05:00:00")).toBe("2026-01-15");
+    expect(localDateOf("2026-01-15 04:59:59", "America/New_York")).toBe("2026-01-14");
+    expect(localDateOf("2026-01-15 05:00:00", "America/New_York")).toBe("2026-01-15");
+  });
+
+  it("maps the same UTC instant to different local days by timezone", () => {
+    expect(localDateOf("2026-09-01 02:30:00", "America/Los_Angeles")).toBe("2026-08-31");
+    expect(localDateOf("2026-09-01 02:30:00", "Asia/Tokyo")).toBe("2026-09-01");
   });
 });
 
@@ -166,9 +173,42 @@ describe("dayLabel", () => {
 
 describe("currentMonth", () => {
   it("agrees with localToday", () => {
-    const today = localToday();
-    const m = currentMonth();
+    const today = localToday("America/New_York");
+    const m = currentMonth("America/New_York");
     expect(formatMonthParam(m)).toBe(today.slice(0, 7));
+  });
+});
+
+describe("timezone-aware helpers", () => {
+  // 2026-09-01T02:30:00Z is 2026-08-31 19:30 in Los Angeles and 2026-09-01 11:30 in Tokyo.
+  beforeEach(() => vi.useFakeTimers({ now: new Date("2026-09-01T02:30:00Z") }));
+  afterEach(() => vi.useRealTimers());
+
+  it("localToday reflects the requested timezone, not the process timezone", () => {
+    expect(localToday("America/Los_Angeles")).toBe("2026-08-31");
+    expect(localToday("UTC")).toBe("2026-09-01");
+    expect(localToday("Asia/Tokyo")).toBe("2026-09-01");
+  });
+
+  it("currentMonth follows the requested timezone across a month boundary", () => {
+    expect(currentMonth("America/Los_Angeles")).toEqual({ year: 2026, month: 8 });
+    expect(currentMonth("UTC")).toEqual({ year: 2026, month: 9 });
+  });
+
+  it("daysSince counts from today in the requested timezone", () => {
+    expect(daysSince("2026-08-29", "America/Los_Angeles")).toBe(2);
+    expect(daysSince("2026-08-29", "UTC")).toBe(3);
+  });
+});
+
+describe("isValidTimeZone", () => {
+  it("accepts a real IANA zone", () => {
+    expect(isValidTimeZone("America/Los_Angeles")).toBe(true);
+  });
+
+  it("rejects garbage and empty strings", () => {
+    expect(isValidTimeZone("garbage")).toBe(false);
+    expect(isValidTimeZone("")).toBe(false);
   });
 });
 
