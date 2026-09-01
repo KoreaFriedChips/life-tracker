@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/client";
 import { getKnowledgeEntry, listConnectionsForEntry, listKnowledgeEntries } from "@/db/repo/knowledge";
+import { suggestConnections } from "@/lib/knowledgeGraphView";
+import EntryCombobox from "@/components/EntryCombobox";
 import Markdown from "@/components/Markdown";
 import { STATUS_LABELS, STATUS_TONES } from "@/components/knowledgeStatus";
 import TagList from "@/components/TagList";
@@ -10,7 +12,7 @@ import DeleteButton from "@/components/DeleteButton";
 import Badge from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import { Input, Select } from "@/components/ui/fields";
+import { Input } from "@/components/ui/fields";
 import { addConnectionAction, deleteConnectionAction, deleteEntryAction } from "../actions";
 
 export async function generateMetadata({
@@ -36,7 +38,23 @@ export default async function KnowledgeEntryPage({
   if (!entry) notFound();
 
   const entryConnections = await listConnectionsForEntry(db, entry.id);
-  const otherEntries = (await listKnowledgeEntries(db)).filter((other) => other.id !== entry.id);
+  const allEntries = await listKnowledgeEntries(db);
+  const connectedIds = new Set(entryConnections.map((c) => c.otherEntryId));
+  const connectableEntries = allEntries.filter(
+    (other) => other.id !== entry.id && !connectedIds.has(other.id),
+  );
+  const suggestions = suggestConnections(
+    {
+      nodes: allEntries,
+      links: entryConnections.map((c) => ({
+        id: c.id,
+        source: entry.id,
+        target: c.otherEntryId,
+        label: c.label,
+      })),
+    },
+    entry.id,
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
@@ -124,24 +142,54 @@ export default async function KnowledgeEntryPage({
             </div>
           )}
 
-          {otherEntries.length > 0 && (
+          {connectableEntries.length > 0 && (
             <form
               action={addConnectionAction}
               className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3"
             >
               <input type="hidden" name="entryId" value={entry.id} />
-              <Select name="otherEntryId" required>
-                {otherEntries.map((other) => (
-                  <option key={other.id} value={other.id}>
-                    {other.title}
-                  </option>
-                ))}
-              </Select>
+              <EntryCombobox
+                name="otherEntryId"
+                options={connectableEntries.map((other) => ({ id: other.id, title: other.title }))}
+                className="min-w-56"
+              />
               <Input type="text" name="label" placeholder="Label (optional)" />
               <Button type="submit" size="sm">
                 Connect
               </Button>
             </form>
+          )}
+
+          {suggestions.length > 0 && (
+            <div className="border-t border-border px-4 py-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Suggested
+              </h3>
+              <div className="mt-2 flex flex-col gap-2">
+                {suggestions.map((suggestion) => (
+                  <div key={suggestion.id} className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/knowledge/${suggestion.id}`}
+                        className="text-sm font-medium transition-colors hover:text-accent"
+                      >
+                        {suggestion.title}
+                      </Link>
+                      <p className="truncate text-xs text-muted">
+                        shares {suggestion.shared.join(", ")}
+                      </p>
+                    </div>
+                    <form action={addConnectionAction} className="shrink-0">
+                      <input type="hidden" name="entryId" value={entry.id} />
+                      <input type="hidden" name="otherEntryId" value={suggestion.id} />
+                      <Button type="submit" variant="secondary" size="sm">
+                        Connect
+                      </Button>
+                    </form>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </Card>
       </section>

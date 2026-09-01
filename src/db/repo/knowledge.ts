@@ -47,9 +47,26 @@ export interface Connection {
   createdAt: string;
 }
 
+export interface GraphNode {
+  id: number;
+  title: string;
+  type: KnowledgeType;
+  status: KnowledgeStatus;
+  tags: string[];
+  authors: string[];
+  notesExcerpt: string;
+}
+
+export interface GraphLink {
+  id: number;
+  source: number;
+  target: number;
+  label: string | null;
+}
+
 export interface GraphData {
-  nodes: { id: number; title: string; type: KnowledgeType }[];
-  links: { source: number; target: number; label: string | null }[];
+  nodes: GraphNode[];
+  links: GraphLink[];
 }
 
 export interface ConnectionWithOtherEntry {
@@ -191,16 +208,35 @@ export async function listConnectionsForEntry(
   );
 }
 
+const NOTES_EXCERPT_LENGTH = 200;
+
 /** All entries as graph nodes (including unconnected ones), plus all connections as links. */
 export async function getGraphData(db: AppDatabase): Promise<GraphData> {
   const entries = await db
-    .select({ id: knowledgeEntries.id, title: knowledgeEntries.title, type: knowledgeEntries.type })
+    .select({
+      id: knowledgeEntries.id,
+      title: knowledgeEntries.title,
+      type: knowledgeEntries.type,
+      status: knowledgeEntries.status,
+      tags: knowledgeEntries.tags,
+      authors: knowledgeEntries.authors,
+      notes: knowledgeEntries.notes,
+    })
     .from(knowledgeEntries)
     .all();
   const edges = await db.select().from(connections).all();
 
   return {
-    nodes: entries.map((e) => ({ id: e.id, title: e.title, type: e.type as KnowledgeType })),
-    links: edges.map((c) => ({ source: c.entryIdA, target: c.entryIdB, label: c.label })),
+    nodes: entries.map((e) => ({
+      id: e.id,
+      title: e.title,
+      type: e.type as KnowledgeType,
+      status: e.status as KnowledgeStatus,
+      tags: JSON.parse(e.tags),
+      authors: JSON.parse(e.authors),
+      notesExcerpt:
+        e.notes.length > NOTES_EXCERPT_LENGTH ? `${e.notes.slice(0, NOTES_EXCERPT_LENGTH)}…` : e.notes,
+    })),
+    links: edges.map((c) => ({ id: c.id, source: c.entryIdA, target: c.entryIdB, label: c.label })),
   };
 }
