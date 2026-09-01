@@ -14,18 +14,19 @@ import { createPortal } from "react-dom";
 import {
   createPaletteKnowledge,
   createPaletteTodo,
+  createPaletteTouchpoint,
   getCaptureCategories,
   searchPalette,
 } from "@/app/actions";
 import type { Category } from "@/db/repo/todos";
 import type { CaptureResult, PaletteResults } from "@/lib/paletteSearch";
 import Badge from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClassName } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/fields";
 
 const EMPTY_RESULTS: PaletteResults = { todos: [], people: [], knowledge: [] };
 
-type Mode = "search" | "todo" | "knowledge";
+type Mode = "search" | "todo" | "knowledge" | "touchpoint";
 
 interface Row {
   key: string;
@@ -52,6 +53,8 @@ export default function CommandPalette() {
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [knowledgeType, setKnowledgeType] = useState("book");
+  const [pinned, setPinned] = useState<{ id: number; name: string } | null>(null);
+  const [summary, setSummary] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
@@ -78,6 +81,7 @@ export default function CommandPalette() {
 
   function backToSearch() {
     setMode("search");
+    setPinned(null);
     setError(null);
   }
 
@@ -142,9 +146,18 @@ export default function CommandPalette() {
     closePalette();
   }
 
-  function enterCapture(next: Exclude<Mode, "search">) {
+  function enterCapture(next: "todo" | "knowledge") {
     setMode(next);
     setTitle(query.trim());
+    setError(null);
+    setAdded(false);
+  }
+
+  /** Pins a person from the search results and swaps the input to a touchpoint summary. */
+  function pinPerson(person: { id: number; name: string }) {
+    setMode("touchpoint");
+    setPinned(person);
+    setSummary("");
     setError(null);
     setAdded(false);
   }
@@ -152,6 +165,7 @@ export default function CommandPalette() {
   function finishCapture(result: CaptureResult) {
     if (result.ok) {
       setMode("search");
+      setPinned(null);
       setQuery("");
       setResults(EMPTY_RESULTS);
       setError(null);
@@ -177,6 +191,14 @@ export default function CommandPalette() {
     setPending(false);
   }
 
+  async function submitTouchpoint(e: FormEvent) {
+    e.preventDefault();
+    if (pending || !pinned) return;
+    setPending(true);
+    finishCapture(await createPaletteTouchpoint({ personId: pinned.id, summary }));
+    setPending(false);
+  }
+
   const q = query.trim();
   const rows: Row[] = [
     ...results.todos.map((todo) => ({
@@ -188,7 +210,21 @@ export default function CommandPalette() {
     ...results.people.map((person) => ({
       key: `person-${person.id}`,
       group: "People",
-      content: <span>{person.name}</span>,
+      content: (
+        <>
+          <span className="min-w-0 flex-1 truncate">{person.name}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              pinPerson({ id: person.id, name: person.name });
+            }}
+            className={buttonClassName("ghost", "sm")}
+          >
+            Log touchpoint
+          </button>
+        </>
+      ),
       run: () => go(`/people/${person.id}`),
     })),
     ...results.knowledge.map((entry) => ({
@@ -362,6 +398,31 @@ export default function CommandPalette() {
                   <div className="flex gap-2">
                     <Button type="submit" disabled={pending || !title.trim() || categoryId === null}>
                       Add to-do
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={backToSearch}>
+                      Back
+                    </Button>
+                  </div>
+                </form>
+              )}
+              {mode === "touchpoint" && pinned && (
+                <form onSubmit={submitTouchpoint} className="flex flex-col gap-4 p-4">
+                  <div className="flex items-center gap-2">
+                    <Badge tone="accent">{pinned.name}</Badge>
+                    <span className="text-xs text-muted">Touchpoint dated today</span>
+                  </div>
+                  <Field label="Summary">
+                    <Input
+                      type="text"
+                      value={summary}
+                      onChange={(e) => setSummary(e.target.value)}
+                      autoFocus
+                    />
+                  </Field>
+                  {errorBox}
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={pending || !summary.trim()}>
+                      Log
                     </Button>
                     <Button type="button" variant="ghost" onClick={backToSearch}>
                       Back

@@ -3,19 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { listKnowledgeEntries, createKnowledgeEntry } from "@/db/repo/knowledge";
-import { listPeople } from "@/db/repo/people";
+import { addTouchpoint, listPeople } from "@/db/repo/people";
 import { createTodo, listCategories, listTodos, toggleTodoDone, type Category } from "@/db/repo/todos";
+import { localToday } from "@/lib/dates";
 import {
   KNOWLEDGE_TYPES,
   searchPaletteData,
   type CaptureResult,
   type PaletteResults,
 } from "@/lib/paletteSearch";
+import { getViewerTimeZone } from "@/lib/timezone";
 
 const HOME_PATH = "/";
 const TODOS_PATH = "/todos";
 const CALENDAR_PATH = "/calendar";
 const KNOWLEDGE_PATH = "/knowledge";
+const PEOPLE_PATH = "/people";
 
 function requireNumber(formData: FormData, key: string): number {
   const value = Number(formData.get(key));
@@ -82,5 +85,25 @@ export async function createPaletteKnowledge(input: {
   }
   revalidatePath(HOME_PATH);
   revalidatePath(KNOWLEDGE_PATH);
+  return { ok: true };
+}
+
+/** Logs a touchpoint from the palette, dated the viewer's today. */
+export async function createPaletteTouchpoint(input: {
+  personId: number;
+  summary: string;
+}): Promise<CaptureResult> {
+  const summary = input.summary.trim();
+  if (!summary) return { ok: false, error: "Summary is required." };
+  if (!Number.isFinite(input.personId)) return { ok: false, error: "Pick a person." };
+  const date = localToday(await getViewerTimeZone());
+  try {
+    await addTouchpoint(await getDb(), { personId: input.personId, date, summary });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not log touchpoint." };
+  }
+  revalidatePath(HOME_PATH);
+  revalidatePath(PEOPLE_PATH);
+  revalidatePath(`${PEOPLE_PATH}/${input.personId}`);
   return { ok: true };
 }
