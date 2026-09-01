@@ -542,6 +542,7 @@ export default function CommandPalette() {
                       <option value="article">Article</option>
                       <option value="paper">Paper</option>
                       <option value="video">Video</option>
+                      <option value="thought">Thought</option>
                     </Select>
                   </Field>
                   {errorBox}

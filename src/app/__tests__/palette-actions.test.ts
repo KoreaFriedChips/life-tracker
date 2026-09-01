@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/db/client", () => ({ getDb: vi.fn() }));
+vi.mock("@/db/client", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/db/client")>()),
+  getDb: vi.fn(),
+}));
 vi.mock("@/lib/timezone", () => ({ getViewerTimeZone: vi.fn(async () => "UTC") }));
 
-import { getDb } from "@/db/client";
+import { createDb, getDb } from "@/db/client";
+import { listKnowledgeEntries } from "@/db/repo/knowledge";
 import {
   createPaletteKnowledge,
   createPaletteTodo,
@@ -39,5 +43,16 @@ describe("palette capture actions", () => {
     await expect(createPaletteTouchpoint({ personId: 1, summary: "coffee" })).rejects.toBe(
       authRedirect,
     );
+  });
+
+  it("createPaletteKnowledge stores a thought capture as type thought, not the book fallback", async () => {
+    const db = await createDb(":memory:");
+    vi.mocked(getDb).mockResolvedValue(db);
+
+    const result = await createPaletteKnowledge({ title: "Careers compound", type: "thought" });
+
+    expect(result).toEqual({ ok: true });
+    const [entry] = await listKnowledgeEntries(db);
+    expect(entry.type).toBe("thought");
   });
 });

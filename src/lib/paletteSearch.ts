@@ -4,7 +4,7 @@ import { filterPeopleByQuery, type PersonSearchFields } from "./peopleSearch";
 
 export const PALETTE_GROUP_LIMIT = 5;
 
-export const KNOWLEDGE_TYPES: KnowledgeType[] = ["book", "article", "paper", "video"];
+export const KNOWLEDGE_TYPES: KnowledgeType[] = ["book", "article", "paper", "video", "thought"];
 
 export type CaptureResult = { ok: true } | { ok: false; error: string };
 
