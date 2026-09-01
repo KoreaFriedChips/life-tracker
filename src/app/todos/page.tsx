@@ -155,7 +155,7 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
 
       <details
         id="manage-categories"
-        className="rounded-xl border border-border bg-surface shadow-xs"
+        className="rounded-lg border border-border bg-surface shadow-card"
       >
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold select-none">
           Manage categories

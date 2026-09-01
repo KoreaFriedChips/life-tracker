@@ -7,7 +7,7 @@ export default function TagList({ tags }: { tags: string[] }) {
       {tags.map((tag) => (
         <li
           key={tag}
-          className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs text-muted"
+          className="rounded-full border border-current/10 bg-surface-subtle px-2 py-px text-[11px] text-muted"
         >
           {tag}
         </li>

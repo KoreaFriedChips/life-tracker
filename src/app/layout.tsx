@@ -19,8 +19,8 @@ export const viewport: Viewport = {
   // background fills it; the bar and body pad by env(safe-area-inset-*).
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#4f46e5" },
-    { media: "(prefers-color-scheme: dark)", color: "#6366f1" },
+    { media: "(prefers-color-scheme: light)", color: "#5e6ad2" },
+    { media: "(prefers-color-scheme: dark)", color: "#6e79d6" },
   ],
 };
 

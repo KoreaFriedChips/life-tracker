@@ -25,7 +25,7 @@ const TYPE_LABELS: Record<KnowledgeType, string> = {
 
 function GraphLegend() {
   return (
-    <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5 rounded-lg border border-border bg-surface/90 px-3 py-2 text-xs shadow-xs backdrop-blur">
+    <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5 rounded-lg border border-border bg-surface/90 px-3 py-2 text-xs shadow-pop backdrop-blur">
       {(Object.keys(TYPE_COLORS) as KnowledgeType[]).map((type) => (
         <div key={type} className="flex items-center gap-2">
           <span
@@ -72,7 +72,7 @@ export default function KnowledgeGraph({ nodes, links }: GraphData) {
   }
 
   return (
-    <div className="relative h-[75vh] w-full overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+    <div className="relative h-[75vh] w-full overflow-hidden rounded-lg border border-border bg-surface shadow-card">
       <GraphLegend />
       {/*
         react-force-graph-2d's props are generic over the node/link shape, but next/dynamic's
