@@ -14,3 +14,20 @@ export function filterPeopleByQuery<T extends PersonSearchFields>(people: T[], q
     (p) => p.name.toLowerCase().includes(q) || p.relationshipTags.some((t) => t.toLowerCase().includes(q)),
   );
 }
+
+/** Every tag in use across the given people, deduplicated and sorted alphabetically. */
+export function distinctTags(people: PersonSearchFields[]): string[] {
+  return [...new Set(people.flatMap((p) => p.relationshipTags))].sort();
+}
+
+/**
+ * Keeps people carrying every selected tag (exact match). An empty selection
+ * returns the list unchanged.
+ */
+export function filterPeopleBySelectedTags<T extends PersonSearchFields>(
+  people: T[],
+  selectedTags: string[],
+): T[] {
+  if (selectedTags.length === 0) return people;
+  return people.filter((p) => selectedTags.every((tag) => p.relationshipTags.includes(tag)));
+}
