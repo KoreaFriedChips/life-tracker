@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { PersonWithStaleness } from "@/db/repo/people";
+import { filterPeopleByQuery } from "@/lib/peopleSearch";
 import TagList from "./TagList";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -21,14 +22,13 @@ function stalenessLabel(daysSinceContact: number | null): string {
 }
 
 /**
- * Renders the people list with a client-side name filter.
+ * Renders the people list with a client-side name/tag filter.
  * Receives the already-staleness-sorted list as props; does not re-sort.
  */
 export default function PeopleListFilter({ people }: { people: PersonWithStaleness[] }) {
   const [query, setQuery] = useState("");
 
-  const trimmed = query.trim().toLowerCase();
-  const filtered = trimmed ? people.filter((p) => p.name.toLowerCase().includes(trimmed)) : people;
+  const filtered = filterPeopleByQuery(people, query);
 
   return (
     <div className="flex flex-col gap-4">
@@ -36,8 +36,8 @@ export default function PeopleListFilter({ people }: { people: PersonWithStalene
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by name..."
-        aria-label="Search people by name"
+        placeholder="Search by name or tag..."
+        aria-label="Search people by name or tag"
       />
 
       {filtered.length === 0 ? (
