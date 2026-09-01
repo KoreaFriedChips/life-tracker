@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
 
 const NAV_LINKS = [
+  { href: "/", label: "Today" },
   { href: "/todos", label: "To-dos" },
   { href: "/calendar", label: "Calendar" },
   { href: "/people", label: "People" },
@@ -23,7 +24,7 @@ export default function Nav() {
         </Link>
         <ul className="flex gap-1">
           {NAV_LINKS.map(({ href, label }) => {
-            const active = pathname === href || pathname.startsWith(`${href}/`);
+            const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
             return (
               <li key={href}>
                 <Link
