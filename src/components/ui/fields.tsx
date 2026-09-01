@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 // text-base below sm: iOS Safari auto-zooms (and standalone PWAs stay zoomed)
 // when a focused control's font-size is under 16px.
 const CONTROL =
-  "rounded-lg border border-border bg-surface px-3 text-base sm:text-sm text-foreground placeholder:text-faint outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
+  "rounded-md border border-border bg-surface px-3 text-base sm:text-sm text-foreground shadow-xs placeholder:text-faint outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 export const inputClassName = `h-9 ${CONTROL}`;
 

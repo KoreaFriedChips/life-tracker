@@ -374,7 +374,7 @@ export default function CommandPalette() {
               // Clicks on non-interactive areas keep focus inside the dialog,
               // so key handling stays alive and aria-modal stays honest.
               tabIndex={-1}
-              className="mt-12 w-full max-w-lg rounded-xl border border-border bg-surface shadow-xs outline-none sm:mt-24"
+              className="mt-12 w-full max-w-lg rounded-lg border border-border bg-surface-raised shadow-pop outline-none sm:mt-24"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={onPanelKeyDown}
             >
