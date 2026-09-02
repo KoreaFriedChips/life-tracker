@@ -38,8 +38,8 @@ export default function Nav() {
                   href={href}
                   className={
                     isActive(pathname, href)
-                      ? "rounded-lg bg-surface-subtle px-3 py-1.5 text-sm font-medium text-foreground"
-                      : "rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
+                      ? "block rounded-lg bg-surface-subtle px-3 py-1.5 text-sm font-medium text-foreground"
+                      : "block rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
                   }
                 >
                   {label}
