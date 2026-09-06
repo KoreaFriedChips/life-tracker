@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 };
 
 const BIRTHDAY_WINDOW_DAYS = 14;
+const UPCOMING_WINDOW_DAYS = 7;
 const STALEST_PEOPLE_COUNT = 3;
 
 function Section({
@@ -54,7 +55,7 @@ export default async function Home() {
 
   const activeGoals = await listActiveGoals(db);
   const todos = await listTodos(db);
-  const { overdue, dueToday } = selectTodayTodos(todos, today);
+  const { overdue, dueToday, upcoming } = selectTodayTodos(todos, today, UPCOMING_WINDOW_DAYS);
   const stalePeople = (await listPeopleWithStaleness(db, tz)).slice(0, STALEST_PEOPLE_COUNT);
   const inProgress = (await listKnowledgeEntries(db))
     .filter((entry) => entry.status === "in_progress")
@@ -71,8 +72,10 @@ export default async function Home() {
       <GoalsBanner goals={activeGoals} today={today} />
 
       <Section title="To-dos" viewAll={{ href: "/todos", label: "All to-dos" }}>
-        {overdue.length === 0 && dueToday.length === 0 ? (
-          <p className="px-4 py-3 text-sm text-muted">Nothing due today.</p>
+        {overdue.length === 0 && dueToday.length === 0 && upcoming.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-muted">
+            Nothing due in the next {UPCOMING_WINDOW_DAYS} days.
+          </p>
         ) : (
           <div className="divide-y divide-border px-4">
             {[...overdue, ...dueToday].map((todo) => (
@@ -84,6 +87,24 @@ export default async function Home() {
                 toggleTodo={toggleTodo}
               />
             ))}
+            {upcoming.length > 0 && (
+              <div>
+                <p className="pt-3 pb-1 text-xs font-medium tracking-wide text-faint uppercase">
+                  Next {UPCOMING_WINDOW_DAYS} days
+                </p>
+                <div className="divide-y divide-border">
+                  {upcoming.map((todo) => (
+                    <TodoItem
+                      key={todo.id}
+                      todo={todo}
+                      overdue={false}
+                      notes={todo.notes ? <Markdown>{todo.notes}</Markdown> : null}
+                      toggleTodo={toggleTodo}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Section>
