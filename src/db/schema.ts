@@ -91,3 +91,27 @@ export const todos = sqliteTable(
   },
   (table) => [index("idx_todos_category").on(table.categoryId)],
 );
+
+export const goals = sqliteTable(
+  "goals",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    title: text("title").notNull(),
+    /** 'short' | 'long' */
+    horizon: text("horizon").notNull(),
+    /** Nullable with ON DELETE SET NULL so goals never block deleting a category. */
+    categoryId: integer("category_id").references(() => categories.id, { onDelete: "set null" }),
+    targetDate: text("target_date"),
+    notes: text("notes").notNull().default(""),
+    status: text("status").notNull().default("active"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+    achievedAt: text("achieved_at"),
+  },
+  (table) => [
+    check("goals_horizon_check", sql`${table.horizon} IN ('short','long')`),
+    check("goals_status_check", sql`${table.status} IN ('active','achieved','dropped')`),
+    index("idx_goals_horizon_sort").on(table.horizon, table.sortOrder),
+  ],
+);

@@ -11,7 +11,7 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(hashA, hashB);
 }
 
-/** Sets the session cookie and redirects home when the password matches APP_PASSWORD. */
+/** Sets the session cookie and redirects to the Today dashboard when the password matches APP_PASSWORD. */
 export async function login(formData: FormData) {
   const appPassword = process.env.APP_PASSWORD;
   if (!appPassword) throw new Error("APP_PASSWORD is not set");
@@ -22,7 +22,7 @@ export async function login(formData: FormData) {
   }
 
   await createSessionCookie();
-  redirect("/todos");
+  redirect("/");
 }
 
 /** Clears the session cookie and returns to the login screen. */

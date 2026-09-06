@@ -7,11 +7,17 @@ import CommandPalette from "@/components/CommandPalette";
 
 const NAV_LINKS = [
   { href: "/", label: "Today" },
+  { href: "/goals", label: "Goals", desktopOnly: true },
   { href: "/todos", label: "To-dos" },
   { href: "/calendar", label: "Calendar" },
   { href: "/people", label: "People" },
   { href: "/knowledge", label: "Knowledge" },
 ] as const;
+
+/* Goals sit in the banner at the top of Today, so they're already in front of
+   you on every phone visit. Keeping them out of the tab bar leaves five roomy
+   tabs instead of six cramped ones; the banner's "Manage" link reaches /goals. */
+const TAB_BAR_LINKS = NAV_LINKS.filter((link) => !("desktopOnly" in link));
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
@@ -24,22 +30,24 @@ export default function Nav() {
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
-        <nav aria-label="Primary" className="mx-auto flex max-w-3xl items-center gap-6 px-4 py-2.5">
+        <nav aria-label="Primary" className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-2.5">
           <Link href="/" className="shrink-0 text-sm font-semibold tracking-tight">
             Life Tracker
           </Link>
           {/* Below sm the tab bar handles section links. From sm up, min-w-0 +
-              overflow lets the list shrink and scroll on narrow viewports so
-              the Search trigger and Log out stay on-screen. */}
-          <ul className="hidden min-w-0 gap-1 overflow-x-auto sm:flex">
+              overflow lets the list scroll on narrow viewports so the Search
+              trigger and Log out stay on-screen; the scrollbar chrome itself is
+              hidden so it never draws a bar across the header. Labels are
+              whitespace-nowrap (see li) so "To-dos" can't break at its hyphen. */}
+          <ul className="hidden min-w-0 gap-0.5 overflow-x-auto [scrollbar-width:none] sm:flex [&::-webkit-scrollbar]:hidden">
             {NAV_LINKS.map(({ href, label }) => (
-              <li key={href}>
+              <li key={href} className="whitespace-nowrap">
                 <Link
                   href={href}
                   className={
                     isActive(pathname, href)
-                      ? "block rounded-lg bg-surface-subtle px-3 py-1.5 text-sm font-medium text-foreground"
-                      : "block rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
+                      ? "block rounded-lg bg-surface-subtle px-2 py-1.5 text-sm font-medium text-foreground"
+                      : "block rounded-lg px-2 py-1.5 text-sm text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
                   }
                 >
                   {label}
@@ -70,7 +78,7 @@ export default function Nav() {
         className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
         <ul className="flex">
-          {NAV_LINKS.map(({ href, label }) => (
+          {TAB_BAR_LINKS.map(({ href, label }) => (
             <li key={href} className="min-w-0 flex-1">
               <Link
                 href={href}
