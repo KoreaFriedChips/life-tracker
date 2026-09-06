@@ -11,7 +11,7 @@ const HORIZONS: GoalHorizon[] = ["short", "long"];
  */
 export default function GoalsBanner({ goals, today }: { goals: Goal[]; today: string }) {
   return (
-    <section className="rounded-xl border border-accent/25 bg-accent-soft/40 px-4 py-3 shadow-xs">
+    <section className="rounded-xl border border-accent/30 bg-accent-soft px-4 py-3 shadow-xs">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-xs font-semibold tracking-wide text-accent-soft-fg uppercase">
           Your goals

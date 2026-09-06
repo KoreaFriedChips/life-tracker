@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getDb } from "@/db/client";
+import { listActiveGoals } from "@/db/repo/goals";
 import { listKnowledgeEntries } from "@/db/repo/knowledge";
 import { listPeopleWithStaleness, upcomingBirthdays, type UpcomingBirthday } from "@/db/repo/people";
 import { listTodos } from "@/db/repo/todos";
@@ -9,6 +10,7 @@ import { daysUntilLabel } from "@/lib/birthdays";
 import { selectTodayTodos } from "@/lib/dashboard";
 import { dayLabel, localToday } from "@/lib/dates";
 import { getViewerTimeZone } from "@/lib/timezone";
+import GoalsBanner from "@/components/GoalsBanner";
 import { stalenessLabel, stalenessTone } from "@/components/staleness";
 import TodoItem from "@/components/TodoItem";
 import Badge from "@/components/ui/Badge";
@@ -49,6 +51,7 @@ export default async function Home() {
   const db = await getDb();
   const today = localToday(tz);
 
+  const activeGoals = await listActiveGoals(db);
   const todos = await listTodos(db);
   const { overdue, dueToday } = selectTodayTodos(todos, today);
   const stalePeople = (await listPeopleWithStaleness(db, tz)).slice(0, STALEST_PEOPLE_COUNT);
@@ -63,6 +66,8 @@ export default async function Home() {
         <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
         <p className="text-sm text-muted">{dayLabel(today)}</p>
       </div>
+
+      <GoalsBanner goals={activeGoals} today={today} />
 
       <Section title="To-dos" viewAll={{ href: "/todos", label: "All to-dos" }}>
         {overdue.length === 0 && dueToday.length === 0 ? (
