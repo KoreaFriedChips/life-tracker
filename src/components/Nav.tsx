@@ -39,7 +39,7 @@ export default function Nav() {
               the Search trigger and Log out stay on-screen. */}
           <ul className="hidden min-w-0 gap-1 overflow-x-auto sm:flex">
             {NAV_LINKS.map(({ href, label }) => (
-              <li key={href}>
+              <li key={href} className="whitespace-nowrap">
                 <Link
                   href={href}
                   className={
