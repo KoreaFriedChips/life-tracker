@@ -6,6 +6,7 @@ import { listCategories, listTodos, type Todo } from "@/db/repo/todos";
 import { localToday } from "@/lib/dates";
 import { getViewerTimeZone } from "@/lib/timezone";
 import GoalsBanner from "@/components/GoalsBanner";
+import Markdown from "@/components/Markdown";
 import TodoItem from "@/components/TodoItem";
 import { Button, buttonClassName } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -18,6 +19,7 @@ import {
   moveCategory,
   renameCategory,
   toggleTodo,
+  updateTodoAction,
 } from "./actions";
 
 export const metadata: Metadata = {
@@ -110,7 +112,13 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
                       key={todo.id}
                       todo={todo}
                       overdue={!!todo.dueDate && todo.dueDate < today}
+                      notes={todo.notes ? <Markdown>{todo.notes}</Markdown> : null}
                       toggleTodo={toggleTodo}
+                      editing={{
+                        categories,
+                        updateTodo: updateTodoAction,
+                        deleteTodo: deleteTodoAction,
+                      }}
                     />
                   ))}
                 </div>

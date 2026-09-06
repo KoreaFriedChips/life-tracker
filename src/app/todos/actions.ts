@@ -11,6 +11,7 @@ import {
   listCategories,
   toggleTodoDone,
   updateCategory,
+  updateTodo,
 } from "@/db/repo/todos";
 
 const TODOS_PATH = "/todos";
@@ -29,6 +30,24 @@ export async function addTodo(formData: FormData) {
 
   if (title) {
     await createTodo(await getDb(), { title, categoryId, dueDate: dueDate || null });
+  }
+
+  revalidatePath(TODOS_PATH);
+}
+
+/**
+ * Saves an edited to-do: title, Markdown notes, category and due date.
+ * Empty titles are ignored (as in addTodo) so a blank save can't erase a row's label.
+ */
+export async function updateTodoAction(formData: FormData) {
+  const id = requireNumber(formData, "id");
+  const title = String(formData.get("title") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "");
+  const categoryId = requireNumber(formData, "categoryId");
+  const dueDate = String(formData.get("dueDate") ?? "").trim();
+
+  if (title) {
+    await updateTodo(await getDb(), id, { title, notes, categoryId, dueDate: dueDate || null });
   }
 
   revalidatePath(TODOS_PATH);

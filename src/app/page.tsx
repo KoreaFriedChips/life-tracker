@@ -11,6 +11,7 @@ import { selectTodayTodos } from "@/lib/dashboard";
 import { dayLabel, localToday } from "@/lib/dates";
 import { getViewerTimeZone } from "@/lib/timezone";
 import GoalsBanner from "@/components/GoalsBanner";
+import Markdown from "@/components/Markdown";
 import { stalenessLabel, stalenessTone } from "@/components/staleness";
 import TodoItem from "@/components/TodoItem";
 import Badge from "@/components/ui/Badge";
@@ -79,6 +80,7 @@ export default async function Home() {
                 key={todo.id}
                 todo={todo}
                 overdue={todo.dueDate! < today}
+                notes={todo.notes ? <Markdown>{todo.notes}</Markdown> : null}
                 toggleTodo={toggleTodo}
               />
             ))}

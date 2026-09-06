@@ -19,6 +19,7 @@ import {
 } from "@/lib/dates";
 import { getViewerTimeZone } from "@/lib/timezone";
 import CalendarTodoItem from "@/components/CalendarTodoItem";
+import Markdown from "@/components/Markdown";
 import TodoItem from "@/components/TodoItem";
 import Badge from "@/components/ui/Badge";
 import { Button, buttonClassName } from "@/components/ui/Button";
@@ -208,6 +209,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
                     key={todo.id}
                     todo={todo}
                     overdue={!!todo.dueDate && todo.dueDate < today}
+                    notes={todo.notes ? <Markdown>{todo.notes}</Markdown> : null}
                     toggleTodo={toggleTodo}
                   />
                 ))}
@@ -225,7 +227,13 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
             ) : (
               <div className="divide-y divide-border px-4">
                 {completedOnDay.map((todo) => (
-                  <TodoItem key={todo.id} todo={todo} overdue={false} toggleTodo={toggleTodo} />
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    overdue={false}
+                    notes={todo.notes ? <Markdown>{todo.notes}</Markdown> : null}
+                    toggleTodo={toggleTodo}
+                  />
                 ))}
               </div>
             )}
