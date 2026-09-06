@@ -7,12 +7,17 @@ import CommandPalette from "@/components/CommandPalette";
 
 const NAV_LINKS = [
   { href: "/", label: "Today" },
-  { href: "/goals", label: "Goals" },
+  { href: "/goals", label: "Goals", desktopOnly: true },
   { href: "/todos", label: "To-dos" },
   { href: "/calendar", label: "Calendar" },
   { href: "/people", label: "People" },
   { href: "/knowledge", label: "Knowledge" },
 ] as const;
+
+/* Goals sit in the banner at the top of Today, so they're already in front of
+   you on every phone visit. Keeping them out of the tab bar leaves five roomy
+   tabs instead of six cramped ones; the banner's "Manage" link reaches /goals. */
+const TAB_BAR_LINKS = NAV_LINKS.filter((link) => !("desktopOnly" in link));
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
@@ -71,7 +76,7 @@ export default function Nav() {
         className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
         <ul className="flex">
-          {NAV_LINKS.map(({ href, label }) => (
+          {TAB_BAR_LINKS.map(({ href, label }) => (
             <li key={href} className="min-w-0 flex-1">
               <Link
                 href={href}
