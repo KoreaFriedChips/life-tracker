@@ -4,6 +4,7 @@ import { getDb } from "@/db/client";
 import { listActiveGoals } from "@/db/repo/goals";
 import { listCategories, listTodos, type Todo } from "@/db/repo/todos";
 import { localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 import GoalsBanner from "@/components/GoalsBanner";
 import TodoItem from "@/components/TodoItem";
 import { Button, buttonClassName } from "@/components/ui/Button";
@@ -28,11 +29,12 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
   const showCompleted = params.showCompleted === "1";
   const error = typeof params.error === "string" ? params.error : null;
 
-  const db = getDb();
-  const categories = listCategories(db);
-  const allTodos = listTodos(db);
-  const activeGoals = listActiveGoals(db);
-  const today = localToday();
+  const tz = await getViewerTimeZone();
+  const db = await getDb();
+  const categories = await listCategories(db);
+  const allTodos = await listTodos(db);
+  const activeGoals = await listActiveGoals(db);
+  const today = localToday(tz);
 
   const openTodosByCategory = new Map<number, Todo[]>();
   for (const todo of allTodos) {
@@ -158,7 +160,7 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
 
       <details
         id="manage-categories"
-        className="rounded-xl border border-border bg-surface shadow-xs"
+        className="rounded-lg border border-border bg-surface shadow-card"
       >
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold select-none">
           Manage categories
@@ -166,7 +168,7 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
 
         <div className="flex flex-col gap-2 border-t border-border px-4 py-3">
           {categories.map((category, index) => (
-            <div key={category.id} className="flex items-center gap-2">
+            <div key={category.id} className="flex flex-wrap items-center gap-2">
               <form action={moveCategory} className="flex gap-1">
                 <input type="hidden" name="id" value={category.id} />
                 <Button

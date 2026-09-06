@@ -11,7 +11,7 @@ export async function generateMetadata({
 }: PageProps<"/goals/[id]/edit">): Promise<Metadata> {
   const { id: idParam } = await params;
   const id = Number(idParam);
-  const goal = Number.isFinite(id) ? getGoal(getDb(), id) : null;
+  const goal = Number.isFinite(id) ? await getGoal(await getDb(), id) : null;
   return { title: goal ? `Edit ${goal.title}` : "Goal not found" };
 }
 
@@ -19,14 +19,14 @@ export default async function EditGoalPage({ params }: PageProps<"/goals/[id]/ed
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const db = getDb();
-  const goal = Number.isFinite(id) ? getGoal(db, id) : null;
+  const db = await getDb();
+  const goal = Number.isFinite(id) ? await getGoal(db, id) : null;
   if (!goal) notFound();
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Edit {goal.title}</h1>
-      <GoalForm goal={goal} categories={listCategories(db)} action={updateGoalAction} />
+      <GoalForm goal={goal} categories={await listCategories(db)} action={updateGoalAction} />
     </div>
   );
 }

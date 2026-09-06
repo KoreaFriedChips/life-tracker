@@ -48,16 +48,16 @@ export async function createGoalAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
-  const db = getDb();
+  const db = await getDb();
   const horizon = parseHorizon(formData);
 
-  const goal = createGoal(db, {
+  const goal = await createGoal(db, {
     title,
     horizon,
     categoryId: parseCategoryId(formData),
     targetDate: parseTargetDate(formData),
     notes: String(formData.get("notes") ?? "").trim(),
-    sortOrder: nextGoalSortOrder(db, horizon),
+    sortOrder: await nextGoalSortOrder(db, horizon),
   });
 
   revalidatePath(GOALS_PATH);
@@ -71,7 +71,7 @@ export async function updateGoalAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
-  updateGoal(getDb(), id, {
+  await updateGoal(await getDb(), id, {
     title,
     horizon: parseHorizon(formData),
     categoryId: parseCategoryId(formData),
@@ -91,7 +91,7 @@ export async function setGoalStatusAction(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   if (!(GOAL_STATUSES as readonly string[]).includes(status)) return;
 
-  setGoalStatus(getDb(), id, status as GoalStatus);
+  await setGoalStatus(await getDb(), id, status as GoalStatus);
 
   revalidatePath(GOALS_PATH);
   revalidatePath(`${GOALS_PATH}/${id}`);
@@ -103,7 +103,7 @@ export async function moveGoalAction(formData: FormData) {
   const id = requireNumber(formData, "id");
   const direction = String(formData.get("direction") ?? "") === "up" ? "up" : "down";
 
-  moveGoal(getDb(), id, direction);
+  await moveGoal(await getDb(), id, direction);
 
   revalidatePath(GOALS_PATH);
   revalidatePath(TODOS_PATH);
@@ -112,7 +112,7 @@ export async function moveGoalAction(formData: FormData) {
 /** Permanently deletes a goal and returns to the list. */
 export async function deleteGoalAction(formData: FormData) {
   const id = requireNumber(formData, "id");
-  deleteGoal(getDb(), id);
+  await deleteGoal(await getDb(), id);
 
   revalidatePath(GOALS_PATH);
   revalidatePath(TODOS_PATH);

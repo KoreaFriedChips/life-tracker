@@ -1,14 +1,16 @@
 import { eq, or, sql } from "drizzle-orm";
 import type { AppDatabase } from "../client";
+import { causedBy } from "../errors";
 import { connections, knowledgeEntries } from "../schema";
 
-export type KnowledgeType = "book" | "article" | "paper";
-export type KnowledgeStatus = "want_to_read" | "reading" | "finished";
+export type KnowledgeType = "book" | "article" | "paper" | "video" | "thought";
+export type KnowledgeStatus = "next" | "in_progress" | "completed";
 
 export interface KnowledgeEntry {
   id: number;
   title: string;
   type: KnowledgeType;
+  url: string | null;
   authors: string[];
   status: KnowledgeStatus;
   notes: string;
@@ -20,6 +22,7 @@ export interface KnowledgeEntry {
 export interface NewKnowledgeEntry {
   title: string;
   type: KnowledgeType;
+  url?: string;
   authors?: string[];
   status?: KnowledgeStatus;
   notes?: string;
@@ -29,6 +32,7 @@ export interface NewKnowledgeEntry {
 export interface UpdateKnowledgeEntryInput {
   title?: string;
   type?: KnowledgeType;
+  url?: string | null;
   authors?: string[];
   status?: KnowledgeStatus;
   notes?: string;
@@ -43,9 +47,26 @@ export interface Connection {
   createdAt: string;
 }
 
+export interface GraphNode {
+  id: number;
+  title: string;
+  type: KnowledgeType;
+  status: KnowledgeStatus;
+  tags: string[];
+  authors: string[];
+  notesExcerpt: string;
+}
+
+export interface GraphLink {
+  id: number;
+  source: number;
+  target: number;
+  label: string | null;
+}
+
 export interface GraphData {
-  nodes: { id: number; title: string; type: KnowledgeType }[];
-  links: { source: number; target: number; label: string | null }[];
+  nodes: GraphNode[];
+  links: GraphLink[];
 }
 
 export interface ConnectionWithOtherEntry {
@@ -60,6 +81,7 @@ function toKnowledgeEntry(row: typeof knowledgeEntries.$inferSelect): KnowledgeE
     id: row.id,
     title: row.title,
     type: row.type as KnowledgeType,
+    url: row.url,
     authors: JSON.parse(row.authors),
     status: row.status as KnowledgeStatus,
     notes: row.notes,
@@ -71,23 +93,27 @@ function toKnowledgeEntry(row: typeof knowledgeEntries.$inferSelect): KnowledgeE
 
 // --- Knowledge entries ---
 
-export function listKnowledgeEntries(db: AppDatabase): KnowledgeEntry[] {
-  return db.select().from(knowledgeEntries).all().map(toKnowledgeEntry);
+export async function listKnowledgeEntries(db: AppDatabase): Promise<KnowledgeEntry[]> {
+  return (await db.select().from(knowledgeEntries).all()).map(toKnowledgeEntry);
 }
 
-export function getKnowledgeEntry(db: AppDatabase, id: number): KnowledgeEntry | null {
-  const row = db.select().from(knowledgeEntries).where(eq(knowledgeEntries.id, id)).get();
+export async function getKnowledgeEntry(db: AppDatabase, id: number): Promise<KnowledgeEntry | null> {
+  const row = await db.select().from(knowledgeEntries).where(eq(knowledgeEntries.id, id)).get();
   return row ? toKnowledgeEntry(row) : null;
 }
 
-export function createKnowledgeEntry(db: AppDatabase, input: NewKnowledgeEntry): KnowledgeEntry {
-  const [row] = db
+export async function createKnowledgeEntry(
+  db: AppDatabase,
+  input: NewKnowledgeEntry,
+): Promise<KnowledgeEntry> {
+  const [row] = await db
     .insert(knowledgeEntries)
     .values({
       title: input.title,
       type: input.type,
+      url: input.url ?? null,
       authors: JSON.stringify(input.authors ?? []),
-      status: input.status ?? "want_to_read",
+      status: input.status ?? "next",
       notes: input.notes ?? "",
       tags: JSON.stringify(input.tags ?? []),
     })
@@ -96,16 +122,17 @@ export function createKnowledgeEntry(db: AppDatabase, input: NewKnowledgeEntry):
   return toKnowledgeEntry(row);
 }
 
-export function updateKnowledgeEntry(
+export async function updateKnowledgeEntry(
   db: AppDatabase,
   id: number,
   input: UpdateKnowledgeEntryInput,
-): KnowledgeEntry {
-  const [row] = db
+): Promise<KnowledgeEntry> {
+  const [row] = await db
     .update(knowledgeEntries)
     .set({
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.type !== undefined ? { type: input.type } : {}),
+      ...(input.url !== undefined ? { url: input.url } : {}),
       ...(input.authors !== undefined ? { authors: JSON.stringify(input.authors) } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
@@ -119,73 +146,97 @@ export function updateKnowledgeEntry(
   return toKnowledgeEntry(row);
 }
 
-export function deleteKnowledgeEntry(db: AppDatabase, id: number): void {
-  db.delete(knowledgeEntries).where(eq(knowledgeEntries.id, id)).run();
+export async function deleteKnowledgeEntry(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(knowledgeEntries).where(eq(knowledgeEntries.id, id)).run();
 }
 
 // --- Connections ---
 
 /** Adds an undirected connection between two entries, canonically storing the smaller id in entryIdA. */
-export function addConnection(
+export async function addConnection(
   db: AppDatabase,
   entryIdA: number,
   entryIdB: number,
   label?: string,
-): Connection {
+): Promise<Connection> {
   if (entryIdA === entryIdB) {
     throw new Error("Cannot connect a knowledge entry to itself.");
   }
   const [smaller, larger] = entryIdA < entryIdB ? [entryIdA, entryIdB] : [entryIdB, entryIdA];
 
   try {
-    const [row] = db
+    const [row] = await db
       .insert(connections)
       .values({ entryIdA: smaller, entryIdB: larger, label: label ?? null })
       .returning()
       .all();
     return row;
   } catch (err) {
-    if (err instanceof Error && err.message.includes("UNIQUE constraint failed")) {
+    if (causedBy(err, "UNIQUE constraint failed")) {
       throw new Error("A connection between these two entries already exists.");
     }
     throw err;
   }
 }
 
-export function deleteConnection(db: AppDatabase, id: number): void {
-  db.delete(connections).where(eq(connections.id, id)).run();
+export async function deleteConnection(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(connections).where(eq(connections.id, id)).run();
 }
 
 /** All connections touching `entryId`, each resolved to the OTHER entry's id/title (either side of the pair). */
-export function listConnectionsForEntry(db: AppDatabase, entryId: number): ConnectionWithOtherEntry[] {
-  const rows = db
+export async function listConnectionsForEntry(
+  db: AppDatabase,
+  entryId: number,
+): Promise<ConnectionWithOtherEntry[]> {
+  const rows = await db
     .select()
     .from(connections)
     .where(or(eq(connections.entryIdA, entryId), eq(connections.entryIdB, entryId)))
     .all();
 
-  return rows.map((row) => {
-    const otherEntryId = row.entryIdA === entryId ? row.entryIdB : row.entryIdA;
-    const other = getKnowledgeEntry(db, otherEntryId);
-    return {
-      id: row.id,
-      otherEntryId,
-      otherEntryTitle: other?.title ?? "Unknown entry",
-      label: row.label,
-    };
-  });
+  return Promise.all(
+    rows.map(async (row) => {
+      const otherEntryId = row.entryIdA === entryId ? row.entryIdB : row.entryIdA;
+      const other = await getKnowledgeEntry(db, otherEntryId);
+      return {
+        id: row.id,
+        otherEntryId,
+        otherEntryTitle: other?.title ?? "Unknown entry",
+        label: row.label,
+      };
+    }),
+  );
 }
 
+const NOTES_EXCERPT_LENGTH = 200;
+
 /** All entries as graph nodes (including unconnected ones), plus all connections as links. */
-export function getGraphData(db: AppDatabase): GraphData {
-  const entries = db
-    .select({ id: knowledgeEntries.id, title: knowledgeEntries.title, type: knowledgeEntries.type })
+export async function getGraphData(db: AppDatabase): Promise<GraphData> {
+  const entries = await db
+    .select({
+      id: knowledgeEntries.id,
+      title: knowledgeEntries.title,
+      type: knowledgeEntries.type,
+      status: knowledgeEntries.status,
+      tags: knowledgeEntries.tags,
+      authors: knowledgeEntries.authors,
+      notes: knowledgeEntries.notes,
+    })
     .from(knowledgeEntries)
     .all();
-  const edges = db.select().from(connections).all();
+  const edges = await db.select().from(connections).all();
 
   return {
-    nodes: entries.map((e) => ({ id: e.id, title: e.title, type: e.type as KnowledgeType })),
-    links: edges.map((c) => ({ source: c.entryIdA, target: c.entryIdB, label: c.label })),
+    nodes: entries.map((e) => ({
+      id: e.id,
+      title: e.title,
+      type: e.type as KnowledgeType,
+      status: e.status as KnowledgeStatus,
+      tags: JSON.parse(e.tags),
+      authors: JSON.parse(e.authors),
+      notesExcerpt:
+        e.notes.length > NOTES_EXCERPT_LENGTH ? `${e.notes.slice(0, NOTES_EXCERPT_LENGTH)}…` : e.notes,
+    })),
+    links: edges.map((c) => ({ id: c.id, source: c.entryIdA, target: c.entryIdB, label: c.label })),
   };
 }

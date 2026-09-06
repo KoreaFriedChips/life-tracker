@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import {
@@ -33,11 +33,12 @@ export async function createEntryAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
-  const entry = createKnowledgeEntry(getDb(), {
+  const entry = await createKnowledgeEntry(await getDb(), {
     title,
     type: String(formData.get("type") ?? "book") as KnowledgeType,
+    url: String(formData.get("url") ?? "").trim() || undefined,
     authors: parseList(formData, "authors"),
-    status: String(formData.get("status") ?? "want_to_read") as KnowledgeStatus,
+    status: String(formData.get("status") ?? "next") as KnowledgeStatus,
     notes: String(formData.get("notes") ?? "").trim(),
     tags: parseList(formData, "tags"),
   });
@@ -52,11 +53,12 @@ export async function updateEntryAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
-  updateKnowledgeEntry(getDb(), id, {
+  await updateKnowledgeEntry(await getDb(), id, {
     title,
     type: String(formData.get("type") ?? "book") as KnowledgeType,
+    url: String(formData.get("url") ?? "").trim() || null,
     authors: parseList(formData, "authors"),
-    status: String(formData.get("status") ?? "want_to_read") as KnowledgeStatus,
+    status: String(formData.get("status") ?? "next") as KnowledgeStatus,
     notes: String(formData.get("notes") ?? "").trim(),
     tags: parseList(formData, "tags"),
   });
@@ -69,7 +71,7 @@ export async function updateEntryAction(formData: FormData) {
 /** Deletes a knowledge entry (cascades its connections) and redirects to the list. */
 export async function deleteEntryAction(formData: FormData) {
   const id = requireNumber(formData, "id");
-  deleteKnowledgeEntry(getDb(), id);
+  await deleteKnowledgeEntry(await getDb(), id);
 
   revalidatePath(KNOWLEDGE_PATH);
   redirect(KNOWLEDGE_PATH);
@@ -81,12 +83,17 @@ export async function deleteEntryAction(formData: FormData) {
  */
 export async function addConnectionAction(formData: FormData) {
   const entryId = requireNumber(formData, "entryId");
-  const otherEntryId = requireNumber(formData, "otherEntryId");
+  // The combobox submits an empty id when nothing was picked (the old <select> couldn't).
+  const otherEntryId = Number(formData.get("otherEntryId"));
+  if (!Number.isFinite(otherEntryId)) {
+    redirect(`${KNOWLEDGE_PATH}/${entryId}?error=${encodeURIComponent("Pick an entry to connect.")}`);
+  }
   const label = String(formData.get("label") ?? "").trim();
 
   let errorMessage: string | null = null;
+  const db = await getDb();
   try {
-    addConnection(getDb(), entryId, otherEntryId, label || undefined);
+    await addConnection(db, entryId, otherEntryId, label || undefined);
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : "Could not add connection.";
   }
@@ -104,8 +111,45 @@ export async function deleteConnectionAction(formData: FormData) {
   const id = requireNumber(formData, "id");
   const entryId = requireNumber(formData, "entryId");
   const otherEntryId = requireNumber(formData, "otherEntryId");
-  deleteConnection(getDb(), id);
+  await deleteConnection(await getDb(), id);
 
   revalidatePath(`${KNOWLEDGE_PATH}/${entryId}`);
   revalidatePath(`${KNOWLEDGE_PATH}/${otherEntryId}`);
+  refresh(); // the graph page removes connections too, and it lives on neither revalidated path
+}
+
+export interface ConnectEntriesState {
+  error: string | null;
+  /** Bumped on every success so the form can reset its combobox by key. */
+  succeededAt: number;
+}
+
+/**
+ * `useActionState` variant of addConnectionAction for the graph side panel: errors are
+ * returned inline instead of redirecting, so the user never leaves the graph.
+ */
+export async function connectEntriesAction(
+  prev: ConnectEntriesState,
+  formData: FormData,
+): Promise<ConnectEntriesState> {
+  const entryId = requireNumber(formData, "entryId");
+  const otherEntryId = Number(formData.get("otherEntryId"));
+  if (!Number.isFinite(otherEntryId)) {
+    return { error: "Pick an entry to connect.", succeededAt: prev.succeededAt };
+  }
+  const label = String(formData.get("label") ?? "").trim();
+
+  try {
+    await addConnection(await getDb(), entryId, otherEntryId, label || undefined);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Could not add connection.",
+      succeededAt: prev.succeededAt,
+    };
+  }
+
+  revalidatePath(`${KNOWLEDGE_PATH}/${entryId}`);
+  revalidatePath(`${KNOWLEDGE_PATH}/${otherEntryId}`);
+  refresh();
+  return { error: null, succeededAt: Date.now() };
 }

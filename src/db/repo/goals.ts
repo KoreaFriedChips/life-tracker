@@ -59,28 +59,28 @@ function toGoal(row: typeof goals.$inferSelect): Goal {
 /** Short-term goals first, then long-term; each block in manual sort order. */
 const GOAL_ORDER = [sql`CASE ${goals.horizon} WHEN 'short' THEN 0 ELSE 1 END`, asc(goals.sortOrder), asc(goals.id)];
 
-export function listGoals(db: AppDatabase): Goal[] {
-  return db.select().from(goals).orderBy(...GOAL_ORDER).all().map(toGoal);
+export async function listGoals(db: AppDatabase): Promise<Goal[]> {
+  return (await db.select().from(goals).orderBy(...GOAL_ORDER).all()).map(toGoal);
 }
 
 /** The goals worth showing on the daily reminder banner. */
-export function listActiveGoals(db: AppDatabase): Goal[] {
-  return db
+export async function listActiveGoals(db: AppDatabase): Promise<Goal[]> {
+  const rows = await db
     .select()
     .from(goals)
     .where(eq(goals.status, "active"))
     .orderBy(...GOAL_ORDER)
-    .all()
-    .map(toGoal);
+    .all();
+  return rows.map(toGoal);
 }
 
-export function getGoal(db: AppDatabase, id: number): Goal | null {
-  const row = db.select().from(goals).where(eq(goals.id, id)).get();
+export async function getGoal(db: AppDatabase, id: number): Promise<Goal | null> {
+  const row = await db.select().from(goals).where(eq(goals.id, id)).get();
   return row ? toGoal(row) : null;
 }
 
-export function createGoal(db: AppDatabase, input: NewGoal): Goal {
-  const [row] = db
+export async function createGoal(db: AppDatabase, input: NewGoal): Promise<Goal> {
+  const [row] = await db
     .insert(goals)
     .values({
       title: input.title,
@@ -95,8 +95,12 @@ export function createGoal(db: AppDatabase, input: NewGoal): Goal {
   return toGoal(row);
 }
 
-export function updateGoal(db: AppDatabase, id: number, input: UpdateGoalInput): Goal {
-  const [row] = db
+export async function updateGoal(
+  db: AppDatabase,
+  id: number,
+  input: UpdateGoalInput,
+): Promise<Goal> {
+  const [row] = await db
     .update(goals)
     .set({ ...input, updatedAt: sql`(datetime('now'))` })
     .where(eq(goals.id, id))
@@ -107,8 +111,12 @@ export function updateGoal(db: AppDatabase, id: number, input: UpdateGoalInput):
 }
 
 /** Sets a goal's status, stamping achievedAt when it becomes achieved and clearing it otherwise. */
-export function setGoalStatus(db: AppDatabase, id: number, status: GoalStatus): Goal {
-  const [row] = db
+export async function setGoalStatus(
+  db: AppDatabase,
+  id: number,
+  status: GoalStatus,
+): Promise<Goal> {
+  const [row] = await db
     .update(goals)
     .set({
       status,
@@ -122,13 +130,16 @@ export function setGoalStatus(db: AppDatabase, id: number, status: GoalStatus): 
   return toGoal(row);
 }
 
-export function deleteGoal(db: AppDatabase, id: number): void {
-  db.delete(goals).where(eq(goals.id, id)).run();
+export async function deleteGoal(db: AppDatabase, id: number): Promise<void> {
+  await db.delete(goals).where(eq(goals.id, id)).run();
 }
 
 /** The next sortOrder for a new goal in `horizon`, spaced by 10 like the seeded categories. */
-export function nextGoalSortOrder(db: AppDatabase, horizon: GoalHorizon): number {
-  const rows = db
+export async function nextGoalSortOrder(
+  db: AppDatabase,
+  horizon: GoalHorizon,
+): Promise<number> {
+  const rows = await db
     .select({ sortOrder: goals.sortOrder })
     .from(goals)
     .where(eq(goals.horizon, horizon))
@@ -141,11 +152,15 @@ export function nextGoalSortOrder(db: AppDatabase, horizon: GoalHorizon): number
  * horizon*, so a short-term goal never trades places with a long-term one.
  * No-ops when the goal is missing or already at the end of its block.
  */
-export function moveGoal(db: AppDatabase, id: number, direction: "up" | "down"): void {
-  const goal = db.select().from(goals).where(eq(goals.id, id)).get();
+export async function moveGoal(
+  db: AppDatabase,
+  id: number,
+  direction: "up" | "down",
+): Promise<void> {
+  const goal = await db.select().from(goals).where(eq(goals.id, id)).get();
   if (!goal) return;
 
-  const siblings = db
+  const siblings = await db
     .select()
     .from(goals)
     .where(and(eq(goals.horizon, goal.horizon), eq(goals.status, goal.status)))
@@ -166,6 +181,6 @@ export function moveGoal(db: AppDatabase, id: number, direction: "up" | "down"):
         : [neighbor.sortOrder + 1, neighbor.sortOrder]
       : [neighbor.sortOrder, goal.sortOrder];
 
-  db.update(goals).set({ sortOrder: a }).where(eq(goals.id, goal.id)).run();
-  db.update(goals).set({ sortOrder: b }).where(eq(goals.id, neighbor.id)).run();
+  await db.update(goals).set({ sortOrder: a }).where(eq(goals.id, goal.id)).run();
+  await db.update(goals).set({ sortOrder: b }).where(eq(goals.id, neighbor.id)).run();
 }

@@ -1,4 +1,4 @@
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { categories } from "./schema";
 import type * as schema from "./schema";
 
@@ -15,9 +15,9 @@ const DEFAULT_CATEGORIES: { name: string; sortOrder: number }[] = [
 ];
 
 /** Inserts the default categories, but only if the categories table is empty. */
-export function seedCategories(db: BetterSQLite3Database<typeof schema>): void {
-  const existing = db.select({ id: categories.id }).from(categories).limit(1).all();
+export async function seedCategories(db: LibSQLDatabase<typeof schema>): Promise<void> {
+  const existing = await db.select({ id: categories.id }).from(categories).limit(1).all();
   if (existing.length > 0) return;
 
-  db.insert(categories).values(DEFAULT_CATEGORIES).run();
+  await db.insert(categories).values(DEFAULT_CATEGORIES).run();
 }

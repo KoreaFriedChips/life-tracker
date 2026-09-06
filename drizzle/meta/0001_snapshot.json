@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "ef3c6f31-63cc-4161-8ee2-0711a0d9b9e8",
+  "id": "b55951c3-b0fd-4b02-8087-94a83436fa1a",
   "prevId": "f8d8f857-36b5-4cd4-b0e3-24b7155feaaa",
   "tables": {
     "categories": {
@@ -131,130 +131,6 @@
         }
       }
     },
-    "goals": {
-      "name": "goals",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "horizon": {
-          "name": "horizon",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "category_id": {
-          "name": "category_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "target_date": {
-          "name": "target_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'active'"
-        },
-        "sort_order": {
-          "name": "sort_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(datetime('now'))"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(datetime('now'))"
-        },
-        "achieved_at": {
-          "name": "achieved_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "idx_goals_horizon_sort": {
-          "name": "idx_goals_horizon_sort",
-          "columns": [
-            "horizon",
-            "sort_order"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "goals_category_id_categories_id_fk": {
-          "name": "goals_category_id_categories_id_fk",
-          "tableFrom": "goals",
-          "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "goals_horizon_check": {
-          "name": "goals_horizon_check",
-          "value": "\"goals\".\"horizon\" IN ('short','long')"
-        },
-        "goals_status_check": {
-          "name": "goals_status_check",
-          "value": "\"goals\".\"status\" IN ('active','achieved','dropped')"
-        }
-      }
-    },
     "knowledge_entries": {
       "name": "knowledge_entries",
       "columns": {
@@ -277,6 +153,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "authors": {
@@ -335,7 +218,7 @@
       "checkConstraints": {
         "knowledge_entries_type_check": {
           "name": "knowledge_entries_type_check",
-          "value": "\"knowledge_entries\".\"type\" IN ('book','article','paper')"
+          "value": "\"knowledge_entries\".\"type\" IN ('book','article','paper','video')"
         },
         "knowledge_entries_status_check": {
           "name": "knowledge_entries_status_check",

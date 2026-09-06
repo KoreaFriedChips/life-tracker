@@ -12,8 +12,36 @@
     {
       "idx": 1,
       "version": "6",
-      "when": 1788685902823,
-      "tag": "0001_petite_hellcat",
+      "when": 1788220489996,
+      "tag": "0001_video-entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788224324575,
+      "tag": "0002_status-rename",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788239228158,
+      "tag": "0003_people-birthday",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1788246817340,
+      "tag": "0004_thought-entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1788686673083,
+      "tag": "0005_goals",
       "breakpoints": true
     }
   ]

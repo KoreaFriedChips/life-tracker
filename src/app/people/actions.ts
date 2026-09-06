@@ -10,8 +10,29 @@ import {
   deleteTouchpoint,
   updatePerson,
 } from "@/db/repo/people";
+import { isFutureBirthday, parseBirthday } from "@/lib/birthdays";
+import { localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 
 const PEOPLE_PATH = "/people";
+const BIRTHDAY_ERROR = "Birthday must be YYYY-MM-DD or --MM-DD.";
+const FUTURE_BIRTHDAY_ERROR = "Birthday can't be in the future.";
+
+/** Trimmed birthday value, or null when the field is empty (= no birthday). */
+function readBirthday(formData: FormData): string | null {
+  const raw = String(formData.get("birthday") ?? "").trim();
+  return raw === "" ? null : raw;
+}
+
+/** Error message for a non-empty birthday input, or null when storable. */
+async function birthdayInputError(birthday: string | null): Promise<string | null> {
+  if (birthday === null) return null;
+  if (!parseBirthday(birthday)) return BIRTHDAY_ERROR;
+  if (isFutureBirthday(birthday, localToday(await getViewerTimeZone()))) {
+    return FUTURE_BIRTHDAY_ERROR;
+  }
+  return null;
+}
 
 function requireNumber(formData: FormData, key: string): number {
   const value = Number(formData.get(key));
@@ -31,11 +52,19 @@ export async function createPersonAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
-  const person = createPerson(getDb(), {
+  const birthday = readBirthday(formData);
+  const birthdayError = await birthdayInputError(birthday);
+  if (birthdayError !== null) {
+    revalidatePath(PEOPLE_PATH);
+    redirect(`${PEOPLE_PATH}/new?error=${encodeURIComponent(birthdayError)}`);
+  }
+
+  const person = await createPerson(await getDb(), {
     name,
     relationshipTags: parseTags(formData),
     howWeMet: String(formData.get("howWeMet") ?? "").trim(),
     notes: String(formData.get("notes") ?? "").trim(),
+    birthday,
   });
 
   revalidatePath(PEOPLE_PATH);
@@ -48,11 +77,19 @@ export async function updatePersonAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
-  updatePerson(getDb(), id, {
+  const birthday = readBirthday(formData);
+  const birthdayError = await birthdayInputError(birthday);
+  if (birthdayError !== null) {
+    revalidatePath(`${PEOPLE_PATH}/${id}`);
+    redirect(`${PEOPLE_PATH}/${id}/edit?error=${encodeURIComponent(birthdayError)}`);
+  }
+
+  await updatePerson(await getDb(), id, {
     name,
     relationshipTags: parseTags(formData),
     howWeMet: String(formData.get("howWeMet") ?? "").trim(),
     notes: String(formData.get("notes") ?? "").trim(),
+    birthday,
   });
 
   revalidatePath(PEOPLE_PATH);
@@ -63,7 +100,7 @@ export async function updatePersonAction(formData: FormData) {
 /** Deletes a person (cascades their touchpoints) and redirects to the list. */
 export async function deletePersonAction(formData: FormData) {
   const id = requireNumber(formData, "id");
-  deletePerson(getDb(), id);
+  await deletePerson(await getDb(), id);
 
   revalidatePath(PEOPLE_PATH);
   redirect(PEOPLE_PATH);
@@ -76,7 +113,7 @@ export async function addTouchpointAction(formData: FormData) {
   const summary = String(formData.get("summary") ?? "").trim();
 
   if (date && summary) {
-    addTouchpoint(getDb(), { personId, date, summary });
+    await addTouchpoint(await getDb(), { personId, date, summary });
   }
 
   revalidatePath(`${PEOPLE_PATH}/${personId}`);
@@ -87,7 +124,7 @@ export async function addTouchpointAction(formData: FormData) {
 export async function deleteTouchpointAction(formData: FormData) {
   const id = requireNumber(formData, "id");
   const personId = requireNumber(formData, "personId");
-  deleteTouchpoint(getDb(), id);
+  await deleteTouchpoint(await getDb(), id);
 
   revalidatePath(`${PEOPLE_PATH}/${personId}`);
   revalidatePath(PEOPLE_PATH);

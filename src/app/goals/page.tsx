@@ -4,6 +4,7 @@ import { getDb } from "@/db/client";
 import { listGoals, type Goal, type GoalHorizon } from "@/db/repo/goals";
 import { listCategories } from "@/db/repo/todos";
 import { localDateOf, localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 import { HORIZON_LABELS, targetBadge } from "@/lib/goals";
 import Badge from "@/components/ui/Badge";
 import { Button, ButtonLink, buttonClassName } from "@/components/ui/Button";
@@ -22,10 +23,11 @@ export default async function GoalsPage({ searchParams }: PageProps<"/goals">) {
   const params = await searchParams;
   const showArchived = params.showArchived === "1";
 
-  const db = getDb();
-  const allGoals = listGoals(db);
-  const today = localToday();
-  const categoryNameById = new Map(listCategories(db).map((c) => [c.id, c.name]));
+  const tz = await getViewerTimeZone();
+  const db = await getDb();
+  const allGoals = await listGoals(db);
+  const today = localToday(tz);
+  const categoryNameById = new Map((await listCategories(db)).map((c) => [c.id, c.name]));
 
   const active = allGoals.filter((goal) => goal.status === "active");
   const archived = allGoals.filter((goal) => goal.status !== "active");
@@ -147,7 +149,7 @@ export default async function GoalsPage({ searchParams }: PageProps<"/goals">) {
                       </Link>
                       <Badge tone={goal.status === "achieved" ? "success" : "neutral"}>
                         {goal.status === "achieved"
-                          ? `achieved${goal.achievedAt ? ` · ${localDateOf(goal.achievedAt)}` : ""}`
+                          ? `achieved${goal.achievedAt ? ` · ${localDateOf(goal.achievedAt, tz)}` : ""}`
                           : "dropped"}
                       </Badge>
                     </div>

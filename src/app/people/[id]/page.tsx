@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/client";
 import { getPerson, listTouchpoints } from "@/db/repo/people";
+import { daysUntilLabel, formatBirthday, nextOccurrence } from "@/lib/birthdays";
 import { localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 import Markdown from "@/components/Markdown";
 import TagList from "@/components/TagList";
 import DeleteButton from "@/components/DeleteButton";
@@ -14,7 +16,7 @@ import { addTouchpointAction, deletePersonAction, deleteTouchpointAction } from 
 export async function generateMetadata({ params }: PageProps<"/people/[id]">): Promise<Metadata> {
   const { id: idParam } = await params;
   const id = Number(idParam);
-  const person = Number.isFinite(id) ? getPerson(getDb(), id) : null;
+  const person = Number.isFinite(id) ? await getPerson(await getDb(), id) : null;
   return { title: person?.name ?? "Person not found" };
 }
 
@@ -22,12 +24,14 @@ export default async function PersonPage({ params }: PageProps<"/people/[id]">) 
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const db = getDb();
-  const person = Number.isFinite(id) ? getPerson(db, id) : null;
+  const tz = await getViewerTimeZone();
+  const db = await getDb();
+  const person = Number.isFinite(id) ? await getPerson(db, id) : null;
   if (!person) notFound();
 
-  const touchpoints = listTouchpoints(db, id);
-  const today = localToday();
+  const touchpoints = await listTouchpoints(db, id);
+  const today = localToday(tz);
+  const occurrence = person.birthday ? nextOccurrence(person.birthday, today) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
@@ -53,6 +57,16 @@ export default async function PersonPage({ params }: PageProps<"/people/[id]">) 
       {person.howWeMet && (
         <p className="text-sm text-muted">
           <span className="font-medium text-foreground">How we met:</span> {person.howWeMet}
+        </p>
+      )}
+
+      {person.birthday && (
+        <p className="text-sm text-muted">
+          <span className="font-medium text-foreground">Birthday:</span>{" "}
+          {formatBirthday(person.birthday)}
+          {occurrence?.turningAge != null && (
+            <> · turns {occurrence.turningAge} {daysUntilLabel(occurrence.daysUntil)}</>
+          )}
         </p>
       )}
 

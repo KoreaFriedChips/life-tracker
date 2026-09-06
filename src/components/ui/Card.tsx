@@ -9,7 +9,7 @@ export default function Card({
   children: ReactNode;
 }) {
   return (
-    <div className={`rounded-xl border border-border bg-surface shadow-xs ${className}`}>
+    <div className={`rounded-lg border border-border bg-surface shadow-card ${className}`}>
       {children}
     </div>
   );

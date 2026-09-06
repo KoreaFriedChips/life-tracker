@@ -10,7 +10,7 @@ export async function generateMetadata({
 }: PageProps<"/knowledge/[id]/edit">): Promise<Metadata> {
   const { id: idParam } = await params;
   const id = Number(idParam);
-  const entry = Number.isFinite(id) ? getKnowledgeEntry(getDb(), id) : null;
+  const entry = Number.isFinite(id) ? await getKnowledgeEntry(await getDb(), id) : null;
   return { title: entry ? `Edit ${entry.title}` : "Entry not found" };
 }
 
@@ -18,7 +18,7 @@ export default async function EditKnowledgeEntryPage({ params }: PageProps<"/kno
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const entry = Number.isFinite(id) ? getKnowledgeEntry(getDb(), id) : null;
+  const entry = Number.isFinite(id) ? await getKnowledgeEntry(await getDb(), id) : null;
   if (!entry) notFound();
 
   return (

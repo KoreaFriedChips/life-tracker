@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function KnowledgeGraphPage() {
-  const db = getDb();
-  const graphData = getGraphData(db);
+export default async function KnowledgeGraphPage() {
+  const db = await getDb();
+  const graphData = await getGraphData(db);
 
   return (
     <div className="flex w-full flex-1 flex-col gap-4 px-4 py-8">

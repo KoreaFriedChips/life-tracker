@@ -4,6 +4,7 @@ import { getDb } from "@/db/client";
 import { getGoal } from "@/db/repo/goals";
 import { listCategories } from "@/db/repo/todos";
 import { localDateOf, localToday } from "@/lib/dates";
+import { getViewerTimeZone } from "@/lib/timezone";
 import { HORIZON_LABELS, STATUS_LABELS, targetBadge } from "@/lib/goals";
 import Markdown from "@/components/Markdown";
 import DeleteButton from "@/components/DeleteButton";
@@ -14,7 +15,7 @@ import { deleteGoalAction, setGoalStatusAction } from "../actions";
 export async function generateMetadata({ params }: PageProps<"/goals/[id]">): Promise<Metadata> {
   const { id: idParam } = await params;
   const id = Number(idParam);
-  const goal = Number.isFinite(id) ? getGoal(getDb(), id) : null;
+  const goal = Number.isFinite(id) ? await getGoal(await getDb(), id) : null;
   return { title: goal?.title ?? "Goal not found" };
 }
 
@@ -22,13 +23,14 @@ export default async function GoalPage({ params }: PageProps<"/goals/[id]">) {
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const db = getDb();
-  const goal = Number.isFinite(id) ? getGoal(db, id) : null;
+  const tz = await getViewerTimeZone();
+  const db = await getDb();
+  const goal = Number.isFinite(id) ? await getGoal(db, id) : null;
   if (!goal) notFound();
 
-  const badge = targetBadge(goal.targetDate, localToday());
+  const badge = targetBadge(goal.targetDate, localToday(tz));
   const categoryName = goal.categoryId
-    ? (listCategories(db).find((c) => c.id === goal.categoryId)?.name ?? null)
+    ? ((await listCategories(db)).find((c) => c.id === goal.categoryId)?.name ?? null)
     : null;
 
   return (
@@ -44,7 +46,7 @@ export default async function GoalPage({ params }: PageProps<"/goals/[id]">) {
               <Badge tone={goal.status === "achieved" ? "success" : "neutral"}>
                 {STATUS_LABELS[goal.status]}
                 {goal.status === "achieved" && goal.achievedAt
-                  ? ` · ${localDateOf(goal.achievedAt)}`
+                  ? ` · ${localDateOf(goal.achievedAt, tz)}`
                   : ""}
               </Badge>
             )}

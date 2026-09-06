@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 // Reads the category list at request time so newly added categories show up here.
 export const dynamic = "force-dynamic";
 
-export default function NewGoalPage() {
+export default async function NewGoalPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Add goal</h1>
-      <GoalForm categories={listCategories(getDb())} action={createGoalAction} />
+      <GoalForm categories={await listCategories(await getDb())} action={createGoalAction} />
     </div>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `people` ADD `birthday` text;

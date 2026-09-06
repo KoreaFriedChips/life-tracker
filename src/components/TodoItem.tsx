@@ -24,11 +24,13 @@ export default function TodoItem({
         defaultChecked={todo.done}
         onChange={() => formRef.current?.requestSubmit()}
         aria-label={`Mark "${todo.title}" done`}
-        className="mt-0.5 size-4 shrink-0 cursor-pointer"
+        className="mt-0.5 size-5 shrink-0 cursor-pointer sm:size-4"
       />
       <div className="flex-1">
         <div className="flex flex-wrap items-baseline gap-2">
-          <span className="text-sm">{todo.title}</span>
+          <span className={todo.done ? "text-sm text-muted line-through" : "text-sm"}>
+            {todo.title}
+          </span>
           {todo.dueDate && (
             <Badge tone={overdue ? "danger" : "neutral"}>
               {overdue ? `overdue · ${todo.dueDate}` : todo.dueDate}
