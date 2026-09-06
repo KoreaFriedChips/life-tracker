@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDb } from "@/db/client";
+import { listActiveGoals } from "@/db/repo/goals";
 import { listCategories, listTodos, type Todo } from "@/db/repo/todos";
 import { localToday } from "@/lib/dates";
+import GoalsBanner from "@/components/GoalsBanner";
 import TodoItem from "@/components/TodoItem";
 import { Button, buttonClassName } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -29,6 +31,7 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
   const db = getDb();
   const categories = listCategories(db);
   const allTodos = listTodos(db);
+  const activeGoals = listActiveGoals(db);
   const today = localToday();
 
   const openTodosByCategory = new Map<number, Todo[]>();
@@ -48,6 +51,8 @@ export default async function TodosPage({ searchParams }: PageProps<"/todos">) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">To-dos</h1>
+
+      <GoalsBanner goals={activeGoals} today={today} />
 
       {error && (
         <div className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger-soft-fg">

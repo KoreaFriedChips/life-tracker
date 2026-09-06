@@ -9,7 +9,7 @@ import { categories } from "@/db/schema";
 import { seedCategories } from "@/db/seed";
 
 const MIGRATIONS_FOLDER = path.join(process.cwd(), "drizzle");
-const ALL_TABLES = ["categories", "connections", "knowledge_entries", "people", "todos", "touchpoints"];
+const ALL_TABLES = ["categories", "connections", "goals", "knowledge_entries", "people", "todos", "touchpoints"];
 
 const DEFAULT_CATEGORY_NAMES = [
   "Career & Work",
