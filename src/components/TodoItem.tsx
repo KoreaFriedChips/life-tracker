@@ -18,8 +18,10 @@ export interface TodoEditing {
  * `editing` is supplied, an "Edit" button expands an inline form for the
  * title, due date, category and notes.
  *
- * `notes` is the pre-rendered Markdown of `todo.notes`, rendered on the server
- * so react-markdown stays out of the client bundle.
+ * Notes stay collapsed behind a chevron so long notes don't crowd the list;
+ * rows without notes show no chevron. `notes` is the pre-rendered Markdown of
+ * `todo.notes`, rendered on the server so react-markdown stays out of the
+ * client bundle.
  */
 export default function TodoItem({
   todo,
@@ -35,11 +37,13 @@ export default function TodoItem({
   editing?: TodoEditing;
 }) {
   const toggleFormRef = useRef<HTMLFormElement>(null);
-  const [open, setOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const notesId = `todo-${todo.id}-notes`;
 
   async function save(formData: FormData) {
     await editing?.updateTodo(formData);
-    setOpen(false);
+    setEditOpen(false);
   }
 
   return (
@@ -67,25 +71,59 @@ export default function TodoItem({
               </Badge>
             )}
           </div>
-          {!open && todo.notes && (
-            <div className="mt-0.5 [&>.markdown]:text-xs [&>.markdown]:text-muted">{notes}</div>
+          {todo.notes && notesOpen && (
+            <div
+              id={notesId}
+              className="mt-1 [&>.markdown]:text-xs [&>.markdown]:text-muted"
+            >
+              {notes}
+            </div>
           )}
         </div>
 
-        {editing && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-expanded={open}
-            onClick={() => setOpen((wasOpen) => !wasOpen)}
-          >
-            {open ? "Cancel" : "Edit"}
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          {todo.notes && (
+            <button
+              type="button"
+              aria-expanded={notesOpen}
+              aria-controls={notesId}
+              aria-label={`${notesOpen ? "Hide" : "Show"} notes for "${todo.title}"`}
+              onClick={() => setNotesOpen((wasOpen) => !wasOpen)}
+              className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted transition hover:bg-surface-subtle hover:text-foreground active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className={`size-4 transition-transform ${notesOpen ? "rotate-180" : ""}`}
+              >
+                <path d="M6 8l4 4 4-4" />
+              </svg>
+            </button>
+          )}
+
+          {editing && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-expanded={editOpen}
+              onClick={() => {
+                setEditOpen((wasOpen) => !wasOpen);
+                setNotesOpen(false);
+              }}
+            >
+              {editOpen ? "Cancel" : "Edit"}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {editing && open && (
+      {editing && editOpen && (
         <div className="mt-3 flex flex-col gap-2 rounded-lg border border-border bg-surface-subtle p-3">
           <form action={save} className="flex flex-col gap-2">
             <input type="hidden" name="id" value={todo.id} />
