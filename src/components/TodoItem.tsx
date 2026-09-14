@@ -3,8 +3,14 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { Category, Todo } from "@/db/repo/todos";
 import Badge from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClassName } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/ui/fields";
+
+/** Agents the launcher can start for a to-do (see tools/agent-launcher). */
+const AGENTS = [
+  { id: "claude", label: "Claude" },
+  { id: "codex", label: "Codex" },
+] as const;
 
 /** Everything the inline editor needs. Omit it for read-only rows (Today, calendar). */
 export interface TodoEditing {
@@ -104,6 +110,23 @@ export default function TodoItem({
                 <path d="M6 8l4 4 4-4" />
               </svg>
             </button>
+          )}
+
+          {!todo.done && (
+            // Desktop only: the lifetracker-agent:// scheme is handled by tools/agent-launcher on the Mac.
+            <div className="hidden items-center gap-1 sm:flex">
+              {AGENTS.map(({ id, label }) => (
+                <a
+                  key={id}
+                  href={`lifetracker-agent://run?agent=${id}&todo=${todo.id}`}
+                  title={`Open a ${label} session in cmux to work on this assignment (never submits)`}
+                  aria-label={`Work on "${todo.title}" with ${label}`}
+                  className={buttonClassName("ghost", "sm")}
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
           )}
 
           {editing && (

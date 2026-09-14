@@ -49,3 +49,32 @@ bearer_token_env_var = "LIFE_TRACKER_TOKEN"
 ```
 
 To revoke access, change or remove `AGENT_API_TOKEN` and redeploy.
+
+## Assignment agent launcher (macOS)
+
+Open to-dos have **Claude** and **Codex** buttons (desktop widths only). Clicking
+one opens a new [cmux](https://cmux.dev) workspace in `~/Desktop/UWaterloo`,
+where the chosen agent:
+
+1. refreshes the LEARN session with the `learn-auth` alias if
+   `brightspace-mcp doctor` says it expired,
+2. reads the to-do (`get_todo`) and finds the matching LEARN assignment (using
+   a `learn.uwaterloo.ca` link in the notes, or else the title),
+3. does the work in
+   `~/Desktop/UWaterloo/<course>/<assignment>`,
+4. **never submits**: it finishes with a summary of what you need to review
+   and submit yourself.
+
+The agent instructions live in `tools/agent-launcher/prompt.md`.
+
+Setup, once per Mac:
+
+```bash
+./tools/agent-launcher/install.sh
+```
+
+This builds `~/Applications/LifeTrackerAgent.app`, which handles the
+`lifetracker-agent://` links behind the buttons. Your browser asks before
+opening the link the first time. cmux must allow outside programs to control it:
+Settings → Automation → Socket Control Mode → **Automation mode**. Handler
+logs go to `~/Library/Logs/LifeTrackerAgent.log`.
