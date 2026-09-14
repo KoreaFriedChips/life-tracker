@@ -60,7 +60,7 @@ where the chosen agent:
    `brightspace-mcp doctor` says it expired,
 2. reads the to-do (`get_todo`) and finds the matching LEARN assignment (using
    a `learn.uwaterloo.ca` link in the notes, or else the title),
-3. checks the course outline's AI policy, then does the work in
+3. does the work in
    `~/Desktop/UWaterloo/<course>/<assignment>`,
 4. **never submits**: it finishes with a summary of what you need to review
    and submit yourself.
