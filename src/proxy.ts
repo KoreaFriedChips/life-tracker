@@ -20,7 +20,8 @@ export default async function proxy(req: NextRequest) {
 export const config = {
   // Installer-fetched URLs (manifest is requested credential-less; icons back it and apple-touch-icon)
   // must never 302 to /login. `icons/` is start-anchored, exempting only /icons/*.
+  // `api/mcp` is the AI-agent endpoint; it authenticates with a bearer token in the route handler.
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|icons/).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|icons/|api/mcp).*)",
   ],
 };
