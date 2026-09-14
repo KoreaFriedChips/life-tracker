@@ -3,6 +3,7 @@ import path from "node:path";
 import { createClient } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
+import { verifyAgentToken } from "@/lib/agentAuth";
 import { requireSession } from "@/lib/auth";
 import * as schema from "./schema";
 import { seedCategories } from "./seed";
@@ -42,13 +43,8 @@ declare global {
   var __lifeTrackerDbPromise: Promise<AppDatabase> | undefined;
 }
 
-/**
- * The app-wide singleton database, cached on globalThis so dev HMR doesn't reopen handles.
- * Doubles as the data-access-layer auth gate: every page and server action reaches the
- * database through here, and unauthenticated requests are redirected before touching it.
- */
-export async function getDb(): Promise<AppDatabase> {
-  await requireSession();
+/** The app-wide singleton database, cached on globalThis so dev HMR doesn't reopen handles. No auth check. */
+function openDb(): Promise<AppDatabase> {
   if (!globalThis.__lifeTrackerDbPromise) {
     const url = process.env.TURSO_DATABASE_URL ?? "file:data/life.db";
     globalThis.__lifeTrackerDbPromise = createDb(url, process.env.TURSO_AUTH_TOKEN).catch((err) => {
@@ -57,4 +53,22 @@ export async function getDb(): Promise<AppDatabase> {
     });
   }
   return globalThis.__lifeTrackerDbPromise;
+}
+
+/**
+ * The data-access-layer auth gate for the web UI: every page and server action reaches the
+ * database through here, and unauthenticated requests are redirected before touching it.
+ */
+export async function getDb(): Promise<AppDatabase> {
+  await requireSession();
+  return openDb();
+}
+
+/**
+ * The auth gate for AI agents (the /api/mcp route): returns the database only if `req`
+ * carries the AGENT_API_TOKEN bearer token, otherwise null so the caller can respond 401.
+ */
+export async function getAgentDb(req: Request): Promise<AppDatabase | null> {
+  if (!verifyAgentToken(req)) return null;
+  return openDb();
 }
