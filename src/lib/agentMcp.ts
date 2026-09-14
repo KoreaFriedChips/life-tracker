@@ -3,7 +3,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { AppDatabase } from "@/db/client";
-import { createTodo, listCategories, listTodos, type Category } from "@/db/repo/todos";
+import { createTodo, getTodo, listCategories, listTodos, type Category } from "@/db/repo/todos";
 
 const NOTES_PREVIEW_LENGTH = 200;
 
@@ -86,6 +86,25 @@ export function createAgentMcpServer(db: AppDatabase): McpServer {
               t.notes.length > NOTES_PREVIEW_LENGTH ? `${t.notes.slice(0, NOTES_PREVIEW_LENGTH)}…` : t.notes,
           })),
       );
+    },
+  );
+
+  server.registerTool(
+    "get_todo",
+    {
+      title: "Get a to-do",
+      description:
+        "Returns one to-do with its full Markdown notes (list_todos truncates notes), e.g. to read links in them.",
+      inputSchema: {
+        id: z.number().int().describe("To-do id."),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ id }) => {
+      const todo = await getTodo(db, id);
+      if (!todo) return toolError(`No to-do with id ${id}.`);
+      const category = (await listCategories(db)).find((c) => c.id === todo.categoryId);
+      return json({ ...todo, category: category?.name ?? null });
     },
   );
 

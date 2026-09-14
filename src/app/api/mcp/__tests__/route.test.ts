@@ -60,7 +60,7 @@ describe("/api/mcp auth", () => {
     const res = await rpc("tools/list", {});
     expect(res.status).toBe(200);
     const names = (await res.json()).result.tools.map((t: { name: string }) => t.name);
-    expect(names.sort()).toEqual(["create_todo", "list_categories", "list_todos"]);
+    expect(names.sort()).toEqual(["create_todo", "get_todo", "list_categories", "list_todos"]);
   });
 });
 
@@ -117,6 +117,20 @@ describe("/api/mcp tools", () => {
 
     const all = JSON.parse((await callTool("list_todos", { includeDone: true })).text);
     expect(all.map((t: { title: string }) => t.title).sort()).toEqual(["done", "open"]);
+  });
+
+  it("get_todo returns the full notes and category name, and errors on an unknown id", async () => {
+    const [category] = await listCategories(db);
+    const longNotes = `Spec: https://learn.uwaterloo.ca/d2l/lms/dropbox/user/folder_submit_files.d2l?db=1&ou=2 ${"x".repeat(300)}`;
+    const todo = await createTodo(db, { title: "CS 350 A3", categoryId: category.id, notes: longNotes });
+
+    const found = await callTool("get_todo", { id: todo.id });
+    expect(found.isError).toBe(false);
+    expect(JSON.parse(found.text)).toMatchObject({ id: todo.id, notes: longNotes, category: category.name });
+
+    const missing = await callTool("get_todo", { id: 99999 });
+    expect(missing.isError).toBe(true);
+    expect(missing.text).toContain("99999");
   });
 
   it("list_categories returns ids and names", async () => {
